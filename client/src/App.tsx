@@ -79,17 +79,17 @@ const INITIAL_MOCK_EVENTS: Event[] = [
 function App() {
   // Navigation State
   const [currentTab, setCurrentTab] = useState<'dashboard' | 'tickets' | 'scanner'>('dashboard');
-  
+
   // Data States
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Interaction States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  
+
   // User RSVP Tickets (Store event IDs the user registered for)
   const [myTickets, setMyTickets] = useState<string[]>(['5']); // Default RSVP to Retro Rewind VIP pass
 
@@ -147,7 +147,7 @@ function App() {
   const handleRegister = async (event: Event) => {
     const isRegistered = myTickets.includes(event.id);
     let updatedTickets;
-    
+
     if (isRegistered) {
       // Un-register
       updatedTickets = myTickets.filter(id => id !== event.id);
@@ -176,7 +176,7 @@ function App() {
         body: JSON.stringify(newEvent)
       });
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         setEvents(prev => [...prev, data.data]);
       } else {
@@ -259,9 +259,9 @@ function App() {
 
   return (
     <div className="flex min-h-screen overflow-x-hidden font-body-md text-body-md bg-background text-on-background">
-      
+
       {/* Sidebar Component */}
-      <Sidebar 
+      <Sidebar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         setSelectedCategory={setSelectedCategory}
@@ -272,9 +272,9 @@ function App() {
 
       {/* Main Panel */}
       <main className="flex-1 flex flex-col min-w-0 bg-background pb-16 md:pb-0">
-        
+
         {/* Top bar */}
-        <Header 
+        <Header
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           currentTab={currentTab}
@@ -291,18 +291,18 @@ function App() {
               <p className="font-label-bold text-on-surface-variant">LOADING CAMPUS PLATFORM...</p>
             </div>
           ) : selectedEvent ? (
-            
+
             /* --- Event Details View --- */
-            <EventDetail 
+            <EventDetail
               event={selectedEvent}
               myTickets={myTickets}
               handleRegister={handleRegister}
               setSelectedEvent={setSelectedEvent}
             />
           ) : currentTab === 'dashboard' ? (
-            
+
             /* --- Dashboard / Explore View --- */
-            <EventDashboard 
+            <EventDashboard
               events={events}
               myTickets={myTickets}
               handleRegister={handleRegister}
@@ -311,18 +311,18 @@ function App() {
               setSelectedCategory={setSelectedCategory}
             />
           ) : currentTab === 'tickets' ? (
-            
+
             /* --- My Tickets View --- */
-            <TicketWallet 
+            <TicketWallet
               events={events}
               myTickets={myTickets}
               handleRegister={handleRegister}
               setCurrentTab={setCurrentTab}
             />
           ) : (
-            
+
             /* --- Admin Scanner View --- */
-            <TicketScanner 
+            <TicketScanner
               events={events}
               myTickets={myTickets}
               scanCode={scanCode}
@@ -333,50 +333,26 @@ function App() {
             />
           )}
         </div>
-
-        {/* Footer */}
-        <footer className="p-6 md:p-margin-desktop border-t-4 border-on-background flex flex-col md:flex-row justify-between items-center gap-6 mt-auto bg-surface-container-low">
-          <div className="flex items-center gap-4">
-            <div className="bg-on-background text-white p-2 flex items-center justify-center">
-              <span className="material-symbols-outlined text-xl">electric_bolt</span>
-            </div>
-            <div>
-              <p className="font-label-bold text-xs uppercase">Platform Status</p>
-              <p className="text-[10px] text-[#1b6b4f] font-bold">All Systems Operational</p>
-            </div>
-          </div>
-          
-          <div className="flex gap-8 text-[#5f5a7c]">
-            <span className="font-label-bold text-xs uppercase cursor-pointer hover:underline">Privacy Policy</span>
-            <span className="font-label-bold text-xs uppercase cursor-pointer hover:underline">Code of Conduct</span>
-            <span className="font-label-bold text-xs uppercase cursor-pointer hover:underline">Contact Admin</span>
-          </div>
-
-          <div className="max-w-xs text-center md:text-right text-[10px] text-slate-400 uppercase font-semibold">
-            © {new Date().getFullYear()} FestFlow Web Platform. Built for Campus Events.
-          </div>
-        </footer>
-
         {/* Mobile Navigation Bar */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t-4 border-on-background flex justify-around items-center py-3 z-40">
-          <button 
+          <button
             onClick={() => { setCurrentTab('dashboard'); setSelectedEvent(null); }}
             className={`flex flex-col items-center gap-1 ${currentTab === 'dashboard' ? 'text-primary font-bold' : 'text-on-surface-variant'}`}
           >
             <span className="material-symbols-outlined">dashboard</span>
             <span className="text-[10px] font-label-bold">HOME</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => { setCurrentTab('tickets'); setSelectedEvent(null); }}
             className={`flex flex-col items-center gap-1 ${currentTab === 'tickets' ? 'text-primary font-bold' : 'text-on-surface-variant'}`}
           >
             <span className="material-symbols-outlined">confirmation_number</span>
             <span className="text-[10px] font-label-bold">TICKETS</span>
           </button>
-          
+
           <div className="relative -top-6">
-            <button 
+            <button
               onClick={() => setIsHostModalOpen(true)}
               className="bg-[#ffe24c] border-4 border-on-background p-4 neo-shadow-sm flex items-center justify-center rounded-none"
             >
@@ -384,14 +360,14 @@ function App() {
             </button>
           </div>
 
-          <button 
+          <button
             onClick={() => { setCurrentTab('scanner'); setSelectedEvent(null); }}
             className={`flex flex-col items-center gap-1 ${currentTab === 'scanner' ? 'text-primary font-bold' : 'text-on-surface-variant'}`}
           >
             <span className="material-symbols-outlined">qr_code_scanner</span>
             <span className="text-[10px] font-label-bold">SCANNER</span>
           </button>
-          
+
           <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-on-background">
             <img className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Avatar" />
           </div>
@@ -399,7 +375,7 @@ function App() {
       </main>
 
       {/* Host Event Modal */}
-      <HostEventModal 
+      <HostEventModal
         isOpen={isHostModalOpen}
         onClose={() => setIsHostModalOpen(false)}
         newEvent={newEvent}
