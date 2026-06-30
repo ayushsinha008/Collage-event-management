@@ -4,6 +4,7 @@ import { AuthRequest } from '../types';
 
 export const validate = (schema: ZodSchema) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
+    console.error('DEBUG BODY:', req.body);
     try {
       await schema.parseAsync({
         body: req.body,

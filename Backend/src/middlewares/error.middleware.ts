@@ -38,16 +38,23 @@ export const errorMiddleware = (
   if (err.name === 'ZodError') {
     statusCode = 400;
     message = 'Input Validation Failed';
-    errors = err.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`);
+    const issues = err.errors || err.issues || [];
+    errors = issues.map((e: any) => `${e.path?.join('.')}: ${e.message}`);
   }
 
-  logger.error(`[Error Middleware] ${message}`, { 
-    statusCode, 
-    stack: err.stack,
-    requestId: req.requestId,
-    body: req.body,
-    query: req.query
-  });
+  console.error(`[ERROR MIDDLEWARE TRIGGERED]`, err.stack);
+  
+  if (process.env.NODE_ENV !== 'test') {
+    logger.error(`[Error Middleware] ${message}`, { 
+      statusCode, 
+      stack: err.stack,
+      requestId: req.requestId,
+      body: req.body,
+      query: req.query
+    });
+  } else {
+    console.error(`[TEST ERROR] ${message}`, err.stack);
+  }
 
   sendError(req, res, statusCode, message, errors.length > 0 ? errors : undefined);
 };

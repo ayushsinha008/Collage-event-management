@@ -15,8 +15,17 @@ export class EventController {
   }
 
   static async createEvent(req: AuthRequest, res: Response) {
-    const event = await EventService.createEvent(req.body, req.user!);
-    sendSuccess(req, res, 201, 'Event created successfully', event);
+    try {
+      const event = await EventService.createEvent(req.body, req.user!);
+      res.status(201).json({
+        success: true,
+        message: 'Event created successfully.',
+        data: event
+      });
+    } catch (error) {
+      console.error('CREATE EVENT ERROR:', error);
+      throw error;
+    }
   }
 
   static async updateEvent(req: AuthRequest, res: Response) {

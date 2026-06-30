@@ -31,6 +31,8 @@ const app = express();
 
 // Security Headers
 app.use(helmet());
+app.use(mongoSanitize());
+app.use(hpp());
 app.disable('x-powered-by');
 
 // CORS
@@ -59,10 +61,10 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
 // Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
+// app.use(mongoSanitize());
 
 // Prevent parameter pollution
-app.use(hpp());
+// app.use(hpp());
 
 // Compression
 app.use(compression());
