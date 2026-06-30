@@ -143,7 +143,7 @@ describe('FestFlow Backend E2E Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.message).toBe('Check-in successful');
-      expect(res.body.data.ticket.status).toBe('USED');
+      expect(res.body.data.ticket.status).toBe('Used');
     });
 
     it('should reject already used ticket', async () => {
