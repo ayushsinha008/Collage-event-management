@@ -1,87 +1,83 @@
+import { LayoutDashboard, QrCode, FileText } from 'lucide-react';
 
 interface SidebarProps {
-  currentTab: 'dashboard' | 'tickets' | 'scanner';
-  setCurrentTab: (tab: 'dashboard' | 'tickets' | 'scanner') => void;
-  setSelectedCategory: (cat: string) => void;
-  setSelectedEvent: (event: any) => void;
-  setIsHostModalOpen: (open: boolean) => void;
-  error: string | null;
+  currentTab: 'dashboard' | 'scanner';
+  setCurrentTab: (tab: 'dashboard' | 'scanner') => void;
 }
 
 export default function Sidebar({
   currentTab,
-  setCurrentTab,
-  setSelectedCategory,
-  setSelectedEvent,
-  setIsHostModalOpen,
-  error
+  setCurrentTab
 }: SidebarProps) {
   return (
-    <aside className="hidden md:flex w-64 h-screen border-r-4 border-on-background bg-on-background flex-col py-8 sticky top-0 z-50">
-      <div className="px-6 mb-12">
-        <h1 className="font-headline-lg text-headline-lg font-bold text-primary-fixed uppercase tracking-tighter flex items-center gap-1.5 text-[#a6f2cf]">
-          <span className="material-symbols-outlined text-3xl">electric_bolt</span> FestFlow
-        </h1>
-        <p className="font-label-bold text-label-bold text-[#8bd6b4]/70">Student Panel</p>
+    <aside className="hidden md:flex w-64 h-screen bg-black text-white flex-col py-8 px-4 sticky top-0 z-40">
+      {/* Brand logo area */}
+      <div className="px-3 mb-10 flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg bg-orange-500 border-2 border-white flex items-center justify-center font-bold text-white text-base">
+          ⚡
+        </div>
+        <div>
+          <h1 className="font-headline text-lg font-black uppercase tracking-tight text-white leading-none">
+            FestFlow
+          </h1>
+          <span className="text-[9px] font-extrabold text-orange-500 uppercase tracking-widest mt-0.5 block">
+            Volunteer Node
+          </span>
+        </div>
       </div>
 
-      <nav className="flex-grow space-y-2">
+      {/* Sidebar nav items - styled like Tiger Park sidebar */}
+      <nav className="flex-grow space-y-2 px-1">
         <button
-          onClick={() => { setCurrentTab('dashboard'); setSelectedEvent(null); }}
-          className={`w-[calc(100%-16px)] m-2 flex items-center gap-3 px-4 py-3 rounded-none border-4 transition-all text-left ${currentTab === 'dashboard'
-              ? 'bg-tertiary text-on-tertiary border-on-background active-tab-shadow'
-              : 'text-[#e2e2e2] border-transparent hover:text-white hover:translate-x-1'
-            }`}
+          onClick={() => setCurrentTab('dashboard')}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-sm transition-all text-left border-2 ${
+            currentTab === 'dashboard'
+              ? 'bg-white text-black border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+              : 'text-slate-400 border-transparent hover:text-white hover:bg-slate-900/50'
+          }`}
         >
-          <span className="material-symbols-outlined">dashboard</span>
-          <span className="font-label-bold text-label-bold">Dashboard</span>
+          <LayoutDashboard className="w-4 h-4 shrink-0" />
+          <span>Dashboard</span>
         </button>
 
         <button
-          onClick={() => { setCurrentTab('dashboard'); setSelectedCategory('all'); setSelectedEvent(null); }}
-          className={`w-[calc(100%-16px)] m-2 flex items-center gap-3 px-4 py-3 rounded-none border-4 transition-all text-left ${currentTab === 'dashboard' && !error
-              ? 'text-[#e2e2e2] border-transparent hover:text-white'
-              : 'text-[#e2e2e2] border-transparent hover:text-white hover:translate-x-1'
-            }`}
+          onClick={() => setCurrentTab('scanner')}
+          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-sm transition-all text-left border-2 ${
+            currentTab === 'scanner'
+              ? 'bg-white text-black border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+              : 'text-slate-400 border-transparent hover:text-white hover:bg-slate-900/50'
+          }`}
         >
-          <span className="material-symbols-outlined">event</span>
-          <span className="font-label-bold text-label-bold">Events</span>
-        </button>
-
-        <button
-          onClick={() => { setCurrentTab('tickets'); setSelectedEvent(null); }}
-          className={`w-[calc(100%-16px)] m-2 flex items-center gap-3 px-4 py-3 rounded-none border-4 transition-all text-left ${currentTab === 'tickets'
-              ? 'bg-tertiary text-on-tertiary border-on-background active-tab-shadow'
-              : 'text-[#e2e2e2] border-transparent hover:text-white hover:translate-x-1'
-            }`}
-        >
-          <span className="material-symbols-outlined">confirmation_number</span>
-          <span className="font-label-bold text-label-bold">My Tickets</span>
-        </button>
-
-        <button
-          onClick={() => { setCurrentTab('scanner'); setSelectedEvent(null); }}
-          className={`w-[calc(100%-16px)] m-2 flex items-center gap-3 px-4 py-3 rounded-none border-4 transition-all text-left ${currentTab === 'scanner'
-              ? 'bg-tertiary text-on-tertiary border-on-background active-tab-shadow'
-              : 'text-[#e2e2e2] border-transparent hover:text-white hover:translate-x-1'
-            }`}
-        >
-          <span className="material-symbols-outlined">qr_code_scanner</span>
-          <span className="font-label-bold text-label-bold">Live Scanner</span>
+          <QrCode className="w-4 h-4 shrink-0" />
+          <span>Check-in Scanner</span>
         </button>
       </nav>
 
-      <div className="px-4 mt-auto">
-        <button
-          onClick={() => setIsHostModalOpen(true)}
-          className="w-full bg-[#a7f3d0] text-[#247156] border-4 border-on-background neo-shadow-sm font-label-bold text-label-bold py-3 mb-6 press-down hover-lift flex items-center justify-center gap-2"
-        >
-          <span className="material-symbols-outlined">add_circle</span>
-          New Event
-        </button>
+      {/* Done for the day? / Send daily report & profile section at the bottom */}
+      <div className="mt-auto space-y-6 pt-4 border-t border-slate-900">
+        <div className="bg-slate-950 p-4 rounded-xl border border-slate-900 space-y-3">
+          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Done for the day?</p>
+          <button 
+            onClick={() => alert('Daily check-in report exported and synced!')}
+            className="w-full bg-slate-900 hover:bg-slate-800 border-2 border-slate-800 text-white font-bold text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-all"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Send daily report
+          </button>
+        </div>
 
-        <div className="border-t-2 border-slate-700/50 pt-4 flex flex-col gap-2">
-          <span className="text-[#bec9c2] text-xs px-4">Status: {error ? 'Offline (Mock)' : 'Online'}</span>
+        <div className="flex items-center gap-3 px-1">
+          <div className="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-800">
+            <img 
+              className="w-full h-full object-cover" 
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" 
+              alt="Volunteer"
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-white truncate">Ayush Sinha</p>
+            <p className="text-[9px] text-slate-500 font-semibold uppercase">Lead Access Staff</p>
+          </div>
         </div>
       </div>
     </aside>

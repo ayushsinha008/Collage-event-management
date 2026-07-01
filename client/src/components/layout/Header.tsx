@@ -1,62 +1,66 @@
 
 interface HeaderProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  currentTab: 'dashboard' | 'tickets' | 'scanner';
-  setCurrentTab: (tab: 'dashboard' | 'tickets' | 'scanner') => void;
-  selectedEvent: any;
-  setSelectedEvent: (event: any) => void;
+  currentTab: 'dashboard' | 'scanner';
+  setCurrentTab: (tab: 'dashboard' | 'scanner') => void;
 }
 
 export default function Header({
-  searchQuery,
-  setSearchQuery,
   currentTab,
-  setCurrentTab,
-  selectedEvent,
-  setSelectedEvent
+  setCurrentTab
 }: HeaderProps) {
   return (
-    <header className="flex justify-between items-center px-6 md:px-margin-desktop py-4 w-full bg-surface border-b-4 border-on-background sticky top-0 z-40">
+    <header className="flex justify-between items-center px-6 md:px-margin-desktop py-4 w-full bg-white border-b-4 border-black sticky top-0 z-35">
       <div className="flex items-center gap-4">
-        <h2 className="font-headline-md text-headline-md font-bold text-on-background md:hidden flex items-center gap-1">
-          <span className="material-symbols-outlined text-primary">electric_bolt</span> FestFlow
+        {/* Mobile Logo */}
+        <h2 className="font-headline text-xl font-black text-black md:hidden flex items-center gap-1.5 uppercase tracking-tight">
+          <span className="w-8 h-8 rounded-lg bg-orange-500 border-2 border-black flex items-center justify-center text-white text-xs">⚡</span>
+          FestFlow
         </h2>
-        <div className="hidden md:flex bg-white border-4 border-on-background px-4 py-2 w-96 items-center gap-3 neo-shadow-sm">
-          <span className="material-symbols-outlined text-on-surface-variant">search</span>
-          <input 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search events, locations..." 
-            className="bg-transparent border-none outline-none flex-grow font-body-md focus:ring-0 focus:border-transparent text-on-surface p-0"
-          />
-          <span className="text-on-surface-variant font-label-bold text-xs">Search</span>
+        
+        {/* Breadcrumb / Title */}
+        <div className="hidden md:flex flex-col">
+          <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest leading-none mb-1">Active Workspace</span>
+          <h2 className="text-sm font-black text-black uppercase tracking-wide">
+            {currentTab === 'dashboard' ? 'Volunteer Operations Dashboard' : 'Ticket Check-in Scanner'}
+          </h2>
         </div>
       </div>
       
       <div className="flex items-center gap-4">
-        <div className="hidden md:flex items-center gap-6 mr-6">
+        <div className="hidden md:flex items-center gap-6 mr-4">
           <button 
-            onClick={() => { setCurrentTab('dashboard'); setSelectedEvent(null); }}
-            className={`font-bold py-1 ${currentTab === 'dashboard' && !selectedEvent ? 'text-primary border-b-4 border-primary' : 'text-on-surface-variant font-label-bold hover:text-primary'}`}
+            onClick={() => setCurrentTab('dashboard')}
+            className={`font-black py-1 text-xs uppercase tracking-wider transition-all border-b-2 ${
+              currentTab === 'dashboard' 
+                ? 'text-orange-600 border-orange-600' 
+                : 'text-black/60 border-transparent hover:text-black'
+            }`}
           >
-            Discover
+            Dashboard
           </button>
           <button 
-            onClick={() => setCurrentTab('tickets')}
-            className={`font-bold py-1 ${currentTab === 'tickets' ? 'text-primary border-b-4 border-primary' : 'text-on-surface-variant font-label-bold hover:text-primary'}`}
+            onClick={() => setCurrentTab('scanner')}
+            className={`font-black py-1 text-xs uppercase tracking-wider transition-all border-b-2 ${
+              currentTab === 'scanner' 
+                ? 'text-orange-600 border-orange-600' 
+                : 'text-black/60 border-transparent hover:text-black'
+            }`}
           >
-            Tickets
+            Scanner
           </button>
         </div>
         
-        <div className="flex items-center gap-2 md:gap-4">
-          <div className="w-10 h-10 border-4 border-on-background bg-secondary-container overflow-hidden">
+        {/* Volunteer Info badge */}
+        <div className="flex items-center gap-3">
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-black text-black">Ayush Sinha</p>
+            <p className="text-[9px] font-extrabold text-orange-500 uppercase tracking-wider">Lead Access Staff</p>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-yellow-300 border-2 border-black p-0.5 overflow-hidden">
             <img 
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-cover rounded-full" 
               src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" 
-              alt="User Avatar"
+              alt="Volunteer Avatar"
             />
           </div>
         </div>

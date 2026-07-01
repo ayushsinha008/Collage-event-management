@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Event } from './types';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
-import EventDashboard from './features/events/EventDashboard';
-import EventDetail from './features/events/EventDetail';
-import TicketWallet from './features/booking/TicketWallet';
-import TicketScanner from './features/admin/TicketScanner';
-import HostEventModal from './components/common/HostEventModal';
+import VolunteerDashboard from './features/volunteer/VolunteerDashboard';
+import QRScanner from './features/volunteer/QRScanner';
+import { LayoutDashboard, Camera } from 'lucide-react';
 
 const INITIAL_MOCK_EVENTS: Event[] = [
   {
@@ -37,14 +35,14 @@ const INITIAL_MOCK_EVENTS: Event[] = [
   },
   {
     id: '3',
-    title: 'Brutalist UI Lab',
+    title: 'BRUTALIST UI LAB',
     description: 'Hands-on session on creating high-impact visual identities and raw digital layouts using advanced HTML/CSS styling.',
     date: 'OCT 30',
     time: '02:00 PM',
     location: 'Design Lab 4',
     organizer: 'Design Club',
     capacity: 50,
-    rsvps: 22,
+    rsvps: 42,
     category: 'academic',
     imageUrl: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80'
   },
@@ -63,7 +61,7 @@ const INITIAL_MOCK_EVENTS: Event[] = [
   },
   {
     id: '5',
-    title: 'Club Night: Retro Rewind',
+    title: 'CLUB NIGHT: RETRO REWIND',
     description: 'Retro tunes, arcade machines, and neon dancefloors. Live DJ sets playing top hits from the 80s and 90s.',
     date: 'OCT 31',
     time: '08:00 PM',
@@ -78,44 +76,51 @@ const INITIAL_MOCK_EVENTS: Event[] = [
 
 function App() {
   // Navigation State
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'tickets' | 'scanner'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'scanner'>('dashboard');
 
   // Data States
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Interaction States
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-  // User RSVP Tickets (Store event IDs the user registered for)
-  const [myTickets, setMyTickets] = useState<string[]>(['5']); // Default RSVP to Retro Rewind VIP pass
+  // Active filter for Event Viewport in Dashboard
+  const [selectedEventId, setSelectedEventId] = useState<string | 'all'>('all');
 
-  // Host Event Modal
-  const [isHostModalOpen, setIsHostModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    description: '',
-    date: '',
-    time: '',
-    location: '',
-    organizer: '',
-    capacity: 100,
-    category: 'technical' as Event['category'],
-    imageUrl: ''
+  // Check-In counts database
+  const [checkedInCounts, setCheckedInCounts] = useState<Record<string, number>>({
+    '1': 312,
+    '2': 142,
+    '3': 18,
+    '4': 285,
+    '5': 122
   });
 
-  // Admin Scanner simulator state
-  const [scanCode, setScanCode] = useState('');
-  const [scanResult, setScanResult] = useState<{
-    success: boolean;
-    message: string;
-    eventTitle?: string;
-  } | null>(null);
+  // Track checked in ticket IDs to prevent double scans
+  const [checkedInTickets, setCheckedInTickets] = useState<string[]>(['101', '102']);
 
-  // Fetch from Express Server
+  // Live access feed logs
+  const [scanLogs, setScanLogs] = useState<any[]>([
+    {
+      id: 'log-1',
+      studentName: 'Marcus Vance',
+      ticketCode: 'FFLOW-TKT-101',
+      eventTitle: 'NEON PULSE MUSIC FESTIVAL',
+      timestamp: '01:15 PM',
+      status: 'success',
+      message: 'Access granted. Checked in successfully.'
+    },
+    {
+      id: 'log-2',
+      studentName: 'Zoe Chen',
+      ticketCode: 'FFLOW-TKT-102',
+      eventTitle: 'AI & THE FUTURE OF CREATIVITY',
+      timestamp: '01:10 PM',
+      status: 'success',
+      message: 'Access granted. CS Student ID verified.'
+    }
+  ]);
+
+  // Fetch Events from API / server
   const fetchEvents = async () => {
     setLoading(true);
     try {
@@ -129,11 +134,9 @@ function App() {
       } else {
         setEvents(data);
       }
-      setError(null);
     } catch (err) {
       console.warn('Backend server offline, falling back to mock data.');
       setEvents(INITIAL_MOCK_EVENTS);
-      setError('Offline Mode (Mock Server Active)');
     } finally {
       setLoading(false);
     }
@@ -143,246 +146,182 @@ function App() {
     fetchEvents();
   }, []);
 
-  // Handle RSVP
-  const handleRegister = async (event: Event) => {
-    const isRegistered = myTickets.includes(event.id);
-    let updatedTickets;
+  // Handle single ticket check-in verification
+  const handleCheckIn = (ticketId: string) => {
+    const studentNameMap: Record<string, string> = {
+      '1': 'Alex Rivera',
+      '2': 'David Chen',
+      '3': 'Emily Watson',
+      '4': 'Sophia Martinez',
+      '5': 'Liam Harrison',
+      '6': 'Olivia Bennett'
+    };
 
-    if (isRegistered) {
-      // Un-register
-      updatedTickets = myTickets.filter(id => id !== event.id);
-      setEvents(prev => prev.map(e => e.id === event.id ? { ...e, rsvps: e.rsvps - 1 } : e));
-      if (selectedEvent?.id === event.id) {
-        setSelectedEvent(prev => prev ? { ...prev, rsvps: prev.rsvps - 1 } : null);
-      }
-    } else {
-      // Register
-      updatedTickets = [...myTickets, event.id];
-      setEvents(prev => prev.map(e => e.id === event.id ? { ...e, rsvps: e.rsvps + 1 } : e));
-      if (selectedEvent?.id === event.id) {
-        setSelectedEvent(prev => prev ? { ...prev, rsvps: prev.rsvps + 1 } : null);
-      }
-    }
-    setMyTickets(updatedTickets);
-  };
+    const studentName = studentNameMap[ticketId] || `Attendee #${ticketId}`;
+    
+    // Map ticketId to event. For simplicity, tickets 1 to 5 map to events 1 to 5.
+    const targetEventId = ['1', '2', '3', '4', '5'].includes(ticketId) ? ticketId : '1';
+    const event = events.find(e => e.id === targetEventId);
+    const eventTitle = event ? event.title : 'General Event Admission';
 
-  // Create Event Submit
-  const handleCreateEvent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEvent)
-      });
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setEvents(prev => [...prev, data.data]);
-      } else {
-        // Mock fallback push
-        const localNew: Event = {
-          id: String(events.length + 1),
-          title: newEvent.title.toUpperCase(),
-          description: newEvent.description,
-          date: newEvent.date,
-          time: newEvent.time,
-          location: newEvent.location,
-          organizer: newEvent.organizer || 'Campus Club',
-          capacity: Number(newEvent.capacity),
-          rsvps: 0,
-          category: newEvent.category,
-          imageUrl: newEvent.imageUrl || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80'
-        };
-        setEvents(prev => [...prev, localNew]);
-      }
-
-      // Reset
-      setIsHostModalOpen(false);
-      setNewEvent({
-        title: '',
-        description: '',
-        date: '',
-        time: '',
-        location: '',
-        organizer: '',
-        capacity: 100,
-        category: 'technical',
-        imageUrl: ''
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Simulate scanning a ticket code
-  const handleScanSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!scanCode.trim()) return;
-
-    const match = scanCode.match(/FFLOW-TKT-(\d+)/i);
-    if (!match) {
-      setScanResult({
+    // 1. Verify Duplicate check-in
+    if (checkedInTickets.includes(ticketId)) {
+      const duplicateLog = {
+        id: `log-${Date.now()}`,
+        studentName,
+        ticketCode: `FFLOW-TKT-${ticketId}`,
+        eventTitle,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'failed' as const,
+        message: 'FRAUD ALERT: Duplicate scan detected!'
+      };
+      setScanLogs(prev => [duplicateLog, ...prev]);
+      return {
         success: false,
-        message: 'INVALID TICKET FORMAT. Code must be FFLOW-TKT-{ID}'
-      });
-      return;
+        message: 'Duplicate Scan! Ticket already verified.',
+        studentName,
+        eventTitle
+      };
     }
 
-    const ticketId = match[1];
-    const event = events.find(e => e.id === ticketId);
-
-    if (!event) {
-      setScanResult({
+    // 2. Verify Capacity limits
+    if (event && (checkedInCounts[event.id] || 0) >= event.capacity) {
+      const capacityLog = {
+        id: `log-${Date.now()}`,
+        studentName,
+        ticketCode: `FFLOW-TKT-${ticketId}`,
+        eventTitle,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'failed' as const,
+        message: 'DENIED: Venue capacity limit reached!'
+      };
+      setScanLogs(prev => [capacityLog, ...prev]);
+      return {
         success: false,
-        message: `TICKET VALIDATION FAILED. Event ID #${ticketId} does not exist.`
-      });
-      return;
+        message: 'Entry denied. Venue is full.',
+        studentName,
+        eventTitle
+      };
     }
 
-    const isUserRegistered = myTickets.includes(ticketId);
-    if (!isUserRegistered) {
-      setScanResult({
-        success: false,
-        message: `FRAUD ALERT! Student is not registered for this event.`,
-        eventTitle: event.title
-      });
-      return;
-    }
+    // 3. Success check-in
+    setCheckedInTickets(prev => [...prev, ticketId]);
+    setCheckedInCounts(prev => ({
+      ...prev,
+      [targetEventId]: (prev[targetEventId] || 0) + 1
+    }));
 
-    setScanResult({
+    const successLog = {
+      id: `log-${Date.now()}`,
+      studentName,
+      ticketCode: `FFLOW-TKT-${ticketId}`,
+      eventTitle,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'success' as const,
+      message: 'Access granted. Verified and logged.'
+    };
+    setScanLogs(prev => [successLog, ...prev]);
+
+    return {
       success: true,
-      message: 'ACCESS GRANTED. Ticket verified successfully.',
-      eventTitle: event.title
-    });
+      message: 'Access granted. Welcome to the event!',
+      studentName,
+      eventTitle
+    };
   };
 
   return (
-    <div className="flex min-h-screen overflow-x-hidden font-body-md text-body-md bg-background text-on-background">
+    <div className="flex min-h-screen overflow-x-hidden font-body bg-[#fffbeb] text-black">
 
-      {/* Sidebar Component */}
+      {/* Sidebar Layout */}
       <Sidebar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
-        setSelectedCategory={setSelectedCategory}
-        setSelectedEvent={setSelectedEvent}
-        setIsHostModalOpen={setIsHostModalOpen}
-        error={error}
       />
 
-      {/* Main Panel */}
-      <main className="flex-1 flex flex-col min-w-0 bg-background pb-16 md:pb-0">
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
 
-        {/* Top bar */}
+        {/* Top Header bar */}
         <Header
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
           currentTab={currentTab}
           setCurrentTab={setCurrentTab}
-          selectedEvent={selectedEvent}
-          setSelectedEvent={setSelectedEvent}
         />
 
-        {/* Content Area */}
-        <div className="p-6 md:p-margin-desktop flex-grow">
+        {/* Dynamic viewport pages */}
+        <div className="p-6 md:p-10 flex-grow">
           {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center space-y-4">
-              <div className="w-12 h-12 border-4 border-on-background border-t-primary rounded-full animate-spin"></div>
-              <p className="font-label-bold text-on-surface-variant">LOADING CAMPUS PLATFORM...</p>
+            <div className="py-32 flex flex-col items-center justify-center space-y-4">
+              <div className="w-10 h-10 border-4 border-slate-200 border-t-orange-500 rounded-full animate-spin"></div>
+              <p className="font-black text-xs uppercase tracking-wider text-orange-600">Initializing telemetry...</p>
             </div>
-          ) : selectedEvent ? (
-
-            /* --- Event Details View --- */
-            <EventDetail
-              event={selectedEvent}
-              myTickets={myTickets}
-              handleRegister={handleRegister}
-              setSelectedEvent={setSelectedEvent}
-            />
           ) : currentTab === 'dashboard' ? (
-
-            /* --- Dashboard / Explore View --- */
-            <EventDashboard
+            <VolunteerDashboard
               events={events}
-              myTickets={myTickets}
-              handleRegister={handleRegister}
-              setSelectedEvent={setSelectedEvent}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-            />
-          ) : currentTab === 'tickets' ? (
-
-            /* --- My Tickets View --- */
-            <TicketWallet
-              events={events}
-              myTickets={myTickets}
-              handleRegister={handleRegister}
-              setCurrentTab={setCurrentTab}
+              scanLogs={scanLogs}
+              checkedInCounts={checkedInCounts}
+              onStartScanning={() => setCurrentTab('scanner')}
+              selectedEventId={selectedEventId}
+              setSelectedEventId={setSelectedEventId}
             />
           ) : (
-
-            /* --- Admin Scanner View --- */
-            <TicketScanner
-              events={events}
-              myTickets={myTickets}
-              scanCode={scanCode}
-              setScanCode={setScanCode}
-              scanResult={scanResult}
-              setScanResult={setScanResult}
-              handleScanSubmit={handleScanSubmit}
-            />
+            <div className="max-w-xl mx-auto bg-white border-[3px] border-black rounded-2xl p-8 text-black text-center py-16 space-y-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+              <Camera className="w-12 h-12 text-orange-500 mx-auto animate-pulse" />
+              <h3 className="font-headline text-xl font-black uppercase tracking-wider">Access Scanner Ready</h3>
+              <p className="text-xs text-slate-600 max-w-sm mx-auto font-bold">
+                Launch full-screen camera overlay to verify student tickets and manage entries.
+              </p>
+              <button
+                onClick={() => setCurrentTab('scanner')}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-black text-xs px-6 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover-lift press-down transition-all uppercase tracking-wider"
+              >
+                OPEN SCANNER WINDOW
+              </button>
+            </div>
           )}
         </div>
-        {/* Mobile Navigation Bar */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t-4 border-on-background flex justify-around items-center py-3 z-40">
+
+        {/* Mobile Navigation Bottom Bar */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-4 border-black flex justify-around items-center py-2 z-40 shadow-lg">
           <button
-            onClick={() => { setCurrentTab('dashboard'); setSelectedEvent(null); }}
-            className={`flex flex-col items-center gap-1 ${currentTab === 'dashboard' ? 'text-primary font-bold' : 'text-on-surface-variant'}`}
+            onClick={() => setCurrentTab('dashboard')}
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all ${
+              currentTab === 'dashboard' ? 'text-orange-600 font-black' : 'text-slate-500 hover:text-black font-bold'
+            }`}
           >
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="text-[10px] font-label-bold">HOME</span>
+            <LayoutDashboard className="w-5 h-5" />
+            <span className="text-[10px] uppercase tracking-wider">Dashboard</span>
           </button>
 
           <button
-            onClick={() => { setCurrentTab('tickets'); setSelectedEvent(null); }}
-            className={`flex flex-col items-center gap-1 ${currentTab === 'tickets' ? 'text-primary font-bold' : 'text-on-surface-variant'}`}
+            onClick={() => setCurrentTab('scanner')}
+            className="flex flex-col items-center justify-center -mt-6 w-12 h-12 rounded-xl bg-orange-500 text-white border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
           >
-            <span className="material-symbols-outlined">confirmation_number</span>
-            <span className="text-[10px] font-label-bold">TICKETS</span>
+            <Camera className="w-5 h-5 text-white" />
           </button>
-
-          <div className="relative -top-6">
-            <button
-              onClick={() => setIsHostModalOpen(true)}
-              className="bg-[#ffe24c] border-4 border-on-background p-4 neo-shadow-sm flex items-center justify-center rounded-none"
-            >
-              <span className="material-symbols-outlined font-bold text-on-background">add</span>
-            </button>
-          </div>
 
           <button
-            onClick={() => { setCurrentTab('scanner'); setSelectedEvent(null); }}
-            className={`flex flex-col items-center gap-1 ${currentTab === 'scanner' ? 'text-primary font-bold' : 'text-on-surface-variant'}`}
+            onClick={() => setCurrentTab('scanner')}
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all ${
+              currentTab === 'scanner' ? 'text-orange-600 font-black' : 'text-slate-500 hover:text-black font-bold'
+            }`}
           >
-            <span className="material-symbols-outlined">qr_code_scanner</span>
-            <span className="text-[10px] font-label-bold">SCANNER</span>
+            <Camera className="w-5 h-5" />
+            <span className="text-[10px] uppercase tracking-wider">Scanner</span>
           </button>
-
-          <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-on-background">
-            <img className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Avatar" />
-          </div>
         </nav>
+
+        {/* Full-Screen Camera Scanning Overlay */}
+        {currentTab === 'scanner' && (
+          <QRScanner
+            events={events}
+            myTickets={['1', '3', '5']} // Mock secured passes for testing
+            checkedInCounts={checkedInCounts}
+            onCheckIn={handleCheckIn}
+            onClose={() => setCurrentTab('dashboard')}
+          />
+        )}
       </main>
-
-      {/* Host Event Modal */}
-      <HostEventModal
-        isOpen={isHostModalOpen}
-        onClose={() => setIsHostModalOpen(false)}
-        newEvent={newEvent}
-        setNewEvent={setNewEvent}
-        handleSubmit={handleCreateEvent}
-      />
-
     </div>
   );
 }
