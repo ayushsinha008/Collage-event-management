@@ -1,5 +1,7 @@
 
-import { useNavigate } from 'react-router-dom';
+
+import { useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 interface HeaderProps {
   searchQuery: string;
@@ -18,7 +20,23 @@ export default function Header({
   selectedEvent,
   setSelectedEvent
 }: HeaderProps) {
-  const navigate = useNavigate();
+
+  const { user, logout, updatePfp } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const defaultPfp = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80";
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        updatePfp(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <header className="flex justify-between items-center px-6 md:px-margin-desktop py-4 w-full bg-[#a6f2cf] border-b-4 border-on-background sticky top-0 z-40">
@@ -65,45 +83,65 @@ export default function Header({
           >
             Tickets
           </button>
-          <button 
-            onClick={() => { navigate('/organizer/dashboard'); }}
-            className="px-4 py-2 border-4 transition-all uppercase text-xs font-label-bold bg-[#ffe5ec] text-on-background border-on-background hover:bg-[#ffb3c1] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-          >
-            Organizer Panel
-          </button>
-          <button 
-            onClick={() => { navigate('/volunteer'); }}
-            className="px-4 py-2 border-4 transition-all uppercase text-xs font-label-bold bg-[#fff4cc] text-on-background border-on-background hover:bg-[#ffe066] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-          >
-            Volunteer Panel
-          </button>
+
         </div>
         
         <div className="flex items-center gap-2 md:gap-4">
-          <button 
-            onClick={() => navigate('/organizer/dashboard')}
-            className="md:hidden flex items-center justify-center w-10 h-10 border-4 border-on-background bg-[#ffe5ec] hover:bg-[#ffb3c1] active:translate-y-[2px]"
-            title="Organizer Panel"
-          >
-            <span className="material-symbols-outlined font-bold">corporate_fare</span>
-          </button>
-          <button 
-            onClick={() => navigate('/volunteer')}
-            className="md:hidden flex items-center justify-center w-10 h-10 border-4 border-on-background bg-[#fff4cc] hover:bg-[#ffe066] active:translate-y-[2px]"
-            title="Volunteer Panel"
-          >
-            <span className="material-symbols-outlined font-bold">badge</span>
-          </button>
           
-          <div className="w-10 h-10 border-4 border-on-background bg-secondary-container overflow-hidden">
-            <img 
-              className="w-full h-full object-cover" 
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" 
-              alt="User Avatar"
-            />
+          {/* Neo-Brutalist User Dropdown */}
+          <div className="relative group">
+            <button className="flex items-center gap-2 p-1 border-4 border-on-background bg-[#e5deff] neo-shadow-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all">
+              <div className="w-8 h-8 border-2 border-on-background bg-secondary-container overflow-hidden">
+                <img 
+                  className="w-full h-full object-cover" 
+                  src={user?.photoURL || defaultPfp} 
+                  alt="User Avatar"
+                />
+              </div>
+              <span className="hidden sm:inline font-label-bold text-xs uppercase pr-2 text-on-background">
+                {user ? user.name.split(' ')[0] : 'STUDENT'}
+              </span>
+            </button>
+            
+            {/* Popover Menu */}
+            <div className="absolute right-0 mt-2 w-48 bg-white border-4 border-on-background neo-shadow hidden group-hover:block hover:block z-50 p-2">
+              <div className="border-b-2 border-on-background pb-2 mb-2 px-2 text-left">
+                <p className="font-label-bold text-[9px] text-[#1b6b4f] uppercase tracking-widest font-black">{user?.role || 'student'}</p>
+                <p className="font-bold text-xs text-on-background truncate">{user?.name || 'FestFlow User'}</p>
+                <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
+              </div>
+              
+              {/* Change PFP Action */}
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full text-left px-2 py-1.5 hover:bg-[#a6f2cf] text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">photo_camera</span>
+                Change PFP
+              </button>
+
+              <button 
+                onClick={logout}
+                className="w-full text-left px-2 py-1.5 hover:bg-[#ffe5ec] hover:text-error text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer mt-1"
+              >
+                <span className="material-symbols-outlined text-sm text-error">logout</span>
+                Sign Out
+              </button>
+
+              {/* Hidden file input */}
+              <input 
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+              />
+            </div>
           </div>
+
         </div>
       </div>
     </header>
   );
 }
+
