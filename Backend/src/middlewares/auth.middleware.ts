@@ -23,7 +23,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     if (token === 'valid_mock_token' || token === 'student_mock_token') {
       uid = 'mock-1'; email = 'test@example.com'; name = 'Mock Student'; picture = '';
     } else if (token === 'admin_mock_token' || token === 'mock-organizer-token') {
-      uid = 'admin_uid_456'; email = 'admin@example.com'; name = 'Admin User'; picture = '';
+      uid = 'mock-admin'; email = 'admin@example.com'; name = 'Admin User'; picture = '';
     } else {
       const decodedToken = await getAuth().verifyIdToken(token);
       uid = decodedToken.uid;
@@ -64,6 +64,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
 
     next();
   } catch (error) {
+    console.error('AUTH MIDDLEWARE ERROR:', error);
     return next(new ApiError(401, 'Invalid or expired token.'));
   }
 };

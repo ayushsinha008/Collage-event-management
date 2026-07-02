@@ -6,5 +6,6 @@ export const updateProfileSchema = z.object({
     college: z.string().max(100).optional(),
     department: z.string().max(100).optional(),
     year: z.string().max(10).optional(),
+    avatarBase64: z.string().optional(),
   }),
 });

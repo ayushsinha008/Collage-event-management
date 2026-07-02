@@ -1,6 +1,6 @@
 
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 interface HeaderProps {
@@ -23,16 +23,23 @@ export default function Header({
 
   const { user, logout, updatePfp } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const defaultPfp = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80";
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size must be less than 5MB");
+        return;
+      }
+      setIsUploading(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64String = reader.result as string;
-        updatePfp(base64String);
+        await updatePfp(base64String);
+        setIsUploading(false);
       };
       reader.readAsDataURL(file);
     }
@@ -114,10 +121,20 @@ export default function Header({
               {/* Change PFP Action */}
               <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full text-left px-2 py-1.5 hover:bg-[#a6f2cf] text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer"
+                disabled={isUploading}
+                className={`w-full text-left px-2 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer ${isUploading ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'hover:bg-[#a6f2cf]'}`}
               >
-                <span className="material-symbols-outlined text-sm">photo_camera</span>
-                Change PFP
+                {isUploading ? (
+                  <>
+                    <span className="material-symbols-outlined text-sm animate-spin">hourglass_empty</span>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">photo_camera</span>
+                    Change PFP
+                  </>
+                )}
               </button>
 
               <button 

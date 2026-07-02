@@ -16,7 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string, role: 'student' | 'organizer' | 'volunteer') => Promise<User>;
   signInWithGoogle: () => Promise<User>;
   logout: () => Promise<void>;
-  updatePfp: (url: string) => void;
+  updatePfp: (url: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,13 +75,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async (): Promise<User> => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      
+      let customPhotoURL = result.user.photoURL || undefined;
+      try {
+        const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const token = await result.user.getIdToken();
+        const response = await fetch(`${baseURL}/users/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data?.photoURL) {
+            customPhotoURL = data.data.photoURL;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch profile', e);
+      }
+
       const loggedInUser: User = {
         id: result.user.uid,
         name: result.user.displayName || 'FestFlow Student',
         email: result.user.email || '',
         role: 'student',
-        photoURL: result.user.photoURL || undefined
+        photoURL: customPhotoURL
       };
+      localStorage.removeItem('organizer_token');
       localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
       setUser(loggedInUser);
       return loggedInUser;
@@ -168,13 +187,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const updatePfp = (url: string) => {
-    setUser((prev) => {
-      if (!prev) return null;
-      const updated = { ...prev, photoURL: url };
-      localStorage.setItem('auth_user', JSON.stringify(updated));
-      return updated;
-    });
+  const updatePfp = async (base64String: string) => {
+    try {
+      const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
+      // Need to include the auth token. Auth is handled by Firebase, so we get the ID token if available.
+      // The middleware uses Bearer token
+      let token = localStorage.getItem('organizer_token');
+      if (!token) {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          token = await currentUser.getIdToken();
+        }
+      }
+
+      const response = await fetch(`${baseURL}/users/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ avatarBase64: base64String })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile picture on server');
+      }
+
+      const data = await response.json();
+      const updatedUrl = data.data?.photoURL || base64String;
+
+      setUser((prev) => {
+        if (!prev) return null;
+        const updated = { ...prev, photoURL: updatedUrl };
+        localStorage.setItem('auth_user', JSON.stringify(updated));
+        return updated;
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating PFP:', error);
+      return false;
+    }
   };
 
   const logout = async () => {
