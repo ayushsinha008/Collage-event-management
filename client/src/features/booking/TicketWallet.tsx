@@ -4,7 +4,7 @@ interface TicketWalletProps {
   events: Event[];
   myTickets: string[];
   handleRegister: (event: Event) => void;
-  setCurrentTab: (tab: 'dashboard' | 'tickets' | 'scanner') => void;
+  setCurrentTab: (tab: 'dashboard' | 'events' | 'tickets') => void;
 }
 
 export default function TicketWallet({

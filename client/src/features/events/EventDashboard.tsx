@@ -7,6 +7,7 @@ interface EventDashboardProps {
   setSelectedEvent: (event: Event) => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
+  searchQuery: string;
 }
 
 export default function EventDashboard({
@@ -15,16 +16,25 @@ export default function EventDashboard({
   handleRegister,
   setSelectedEvent,
   selectedCategory,
-  setSelectedCategory
+  setSelectedCategory,
+  searchQuery
 }: EventDashboardProps) {
   
-  // Filter events based on active category selection
+  // Filter events based on active category selection and search query
   const filteredEvents = events.filter(e => {
-    return selectedCategory === 'all' || 
+    const matchesCategory = selectedCategory === 'all' || 
            (selectedCategory === 'festivals' && e.category === 'cultural') ||
            (selectedCategory === 'tech talks' && e.category === 'technical') ||
            (selectedCategory === 'sports' && e.category === 'sports') ||
            (selectedCategory === 'workshops' && e.category === 'academic');
+           
+    const matchesSearch = !searchQuery.trim() || 
+           e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           e.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           e.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           e.organizer.toLowerCase().includes(searchQuery.toLowerCase());
+           
+    return matchesCategory && matchesSearch;
   });
 
   return (
@@ -305,46 +315,45 @@ export default function EventDashboard({
           )}
 
           {/* Custom user events addition row */}
-          {events.length > 5 && (
-            filteredEvents.slice(5).map(event => (
-              <div 
-                key={event.id}
-                onClick={() => setSelectedEvent(event)}
-                className="md:col-span-4 group cursor-pointer"
-              >
-                <div className="bg-white border-4 border-on-background neo-shadow hover-lift h-full flex flex-col justify-between p-6">
-                  <div>
-                    <span className="bg-[#a7f3d0] border-2 border-on-background px-2.5 py-0.5 text-[10px] font-label-bold uppercase inline-block mb-3">
-                      {event.category}
-                    </span>
-                    <h4 className="font-headline-md text-headline-md mb-2 group-hover:text-primary transition-colors">
-                      {event.title}
-                    </h4>
-                    <p className="text-on-surface-variant text-sm line-clamp-3 mb-4">
-                      {event.description}
-                    </p>
+          {filteredEvents.filter(e => !['1', '2', '3', '4', '5'].includes(e.id)).map(event => (
+            <div 
+              key={event.id}
+              onClick={() => setSelectedEvent(event)}
+              className="md:col-span-4 group cursor-pointer"
+            >
+              <div className="bg-white border-4 border-on-background neo-shadow hover-lift h-full flex flex-col justify-between p-6">
+                <div>
+                  <span className="bg-[#a7f3d0] border-2 border-on-background px-2.5 py-0.5 text-[10px] font-label-bold uppercase inline-block mb-3">
+                    {event.category}
+                  </span>
+                  <h4 className="font-headline-md text-headline-md mb-2 group-hover:text-primary transition-colors">
+                    {event.title}
+                  </h4>
+                  <p className="text-on-surface-variant text-sm line-clamp-3 mb-4">
+                    {event.description}
+                  </p>
+                </div>
+                
+                <div className="border-t-2 border-on-background/10 pt-4 flex flex-col gap-3">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                    <span>{event.location}</span>
+                    <span>{event.date}</span>
                   </div>
-                  
-                  <div className="border-t-2 border-on-background/10 pt-4 flex flex-col gap-3">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                      <span>{event.location}</span>
-                      <span>{event.date}</span>
-                    </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleRegister(event); }}
-                      className={`w-full py-2 border-2 border-on-background font-label-bold uppercase text-xs hover-lift press-down ${
-                        myTickets.includes(event.id)
-                          ? 'bg-[#ba1a1a] text-white border-[#ba1a1a]'
-                          : 'bg-white hover:bg-on-background hover:text-white'
-                      }`}
-                    >
-                      {myTickets.includes(event.id) ? 'Cancel Ticket' : 'Secure Pass'}
-                    </button>
-                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleRegister(event); }}
+                    className={`w-full py-2 border-2 border-on-background font-label-bold uppercase text-xs hover-lift press-down ${
+                      myTickets.includes(event.id)
+                        ? 'bg-[#ba1a1a] text-white border-[#ba1a1a]'
+                        : 'bg-white hover:bg-on-background hover:text-white'
+                    }`}
+                  >
+                    {myTickets.includes(event.id) ? 'Cancel Ticket' : 'Secure Pass'}
+                  </button>
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          ))
+          }
 
         </div>
       ) : (
