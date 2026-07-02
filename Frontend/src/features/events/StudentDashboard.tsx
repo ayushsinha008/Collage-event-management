@@ -1,4 +1,5 @@
 import { Event } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 
 interface StudentDashboardProps {
   events: Event[];
@@ -15,6 +16,7 @@ export default function StudentDashboard({
   setSelectedEvent,
   setCurrentTab
 }: StudentDashboardProps) {
+  const { user } = useAuth();
   
   // Find registered events
   const registeredEvents = events.filter(e => myTickets.includes(e.id));
@@ -37,7 +39,7 @@ export default function StudentDashboard({
             STUDENT DASHBOARD
           </span>
           <h3 className="font-headline-xl text-3xl md:text-5xl font-bold uppercase mb-3 leading-none">
-            WELCOME BACK, ALEX!
+            WELCOME BACK, {user ? user.name.split(' ')[0] : 'STUDENT'}!
           </h3>
           <p className="font-body-lg text-slate-800 max-w-xl font-semibold">
             Ready to explore? There are {events.length - myTickets.length} new events happening on campus this week.

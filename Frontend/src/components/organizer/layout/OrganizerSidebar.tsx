@@ -81,7 +81,18 @@ export const OrganizerSidebar: React.FC<Props> = ({ onClose }) => {
           <ClipboardList className="w-4 h-4 stroke-[3]" /> MANAGE ALL
         </button>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => {
+            const savedUser = localStorage.getItem('auth_user');
+            let parsed = null;
+            try {
+              parsed = savedUser ? JSON.parse(savedUser) : null;
+            } catch (e) {}
+            if (parsed && parsed.role === 'student') {
+              navigate('/');
+            } else {
+              navigate('/login');
+            }
+          }}
           className="mt-3 w-full bg-[#e5deff] border-4 border-on-background hover:bg-[#ffe24c] font-label-bold py-2 px-4 flex items-center justify-center gap-2"
         >
           STUDENT PANEL →

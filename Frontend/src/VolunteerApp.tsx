@@ -154,8 +154,10 @@ export default function VolunteerApp() {
 
   const handleLogout = () => {
     localStorage.removeItem('volunteer_authenticated');
+    localStorage.removeItem('auth_user');
     setIsAuthenticated(false);
     setPassword('');
+    navigate('/login');
   };
 
   const handleCheckIn = (ticketId: string) => {
@@ -290,7 +292,18 @@ export default function VolunteerApp() {
             
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => {
+                const savedUser = localStorage.getItem('auth_user');
+                let parsed = null;
+                try {
+                  parsed = savedUser ? JSON.parse(savedUser) : null;
+                } catch (e) {}
+                if (parsed && parsed.role === 'student') {
+                  navigate('/');
+                } else {
+                  navigate('/login');
+                }
+              }}
               className="w-full text-center text-xs font-black text-slate-500 hover:text-black uppercase tracking-wider underline mt-4 block"
             >
               Back to Student Portal
@@ -345,7 +358,18 @@ export default function VolunteerApp() {
         {/* CTAs to other areas */}
         <div className="p-5 border-t-4 border-black bg-slate-50 space-y-3">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => {
+              const savedUser = localStorage.getItem('auth_user');
+              let parsed = null;
+              try {
+                parsed = savedUser ? JSON.parse(savedUser) : null;
+              } catch (e) {}
+              if (parsed && parsed.role === 'student') {
+                navigate('/');
+              } else {
+                navigate('/login');
+              }
+            }}
             className="w-full bg-[#e5deff] border-4 border-black hover:bg-[#ffe24c] font-black py-2.5 px-4 flex items-center justify-center gap-2 uppercase text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover-lift"
           >
             <ArrowLeft className="w-4 h-4 stroke-[3]" /> Student Mode

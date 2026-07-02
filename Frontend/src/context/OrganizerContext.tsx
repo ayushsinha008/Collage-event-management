@@ -80,7 +80,9 @@ export const OrganizerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const logout = () => {
     localStorage.removeItem('organizer_token');
+    localStorage.removeItem('auth_user');
     setOrganizer(null);
+    window.location.href = '/login';
   };
 
   return (
