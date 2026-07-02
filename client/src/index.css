@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #f9f9f9;
+    color: #1b1b1b;
+  }
+  
+  /* Smooth focus borders for input elements */
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #1b1b1b;
+  }
+}
+
+.neo-shadow {
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.neo-shadow-sm {
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.neo-shadow-lg {
+  box-shadow: 10px 10px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.active-tab-shadow {
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.hover-lift {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.press-down:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 1);
+}
+
+/* Custom Perforated Ticket Edge Look (translucent overlay support) */
+.ticket-edge {
+  mask-image: radial-gradient(circle at 0px 50%, transparent 12px, black 13px),
+              radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
+  mask-size: 100% 100%;
+}
