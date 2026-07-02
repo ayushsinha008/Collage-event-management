@@ -6,7 +6,7 @@ interface QRScannerProps {
   events: Event[];
   myTickets: string[];
   checkedInCounts: Record<string, number>;
-  onCheckIn: (ticketId: string) => { success: boolean; message: string; studentName: string; eventTitle: string };
+  onCheckIn: (ticketId: string) => Promise<{ success: boolean; message: string; studentName: string; eventTitle: string }>;
   onClose: () => void;
 }
 
@@ -128,13 +128,13 @@ export default function QRScanner({
   };
 
   // Process a ticket scan action (called by simulator, manual entry, or scanner)
-  const processScan = (ticketCodeStr: string) => {
+  const processScan = async (ticketCodeStr: string) => {
     if (scanResult) return; // Prevent double scans
 
     const cleanCode = ticketCodeStr.trim().toUpperCase();
-    const match = cleanCode.match(/FFLOW-TKT-(\d+)/i);
+    const match = cleanCode.match(/FFLOW-TKT-(.+)/i);
     
-    if (!match) {
+    if (!match && !cleanCode.startsWith('FFLOW-TKT-')) {
       const errorMsg = 'Invalid code pattern. Expected FFLOW-TKT-{id}';
       playSound('error');
       triggerVibrate('error');
@@ -151,10 +151,10 @@ export default function QRScanner({
       return;
     }
 
-    const ticketId = match[1];
+    const ticketId = match ? match[1] : cleanCode;
     
     // Execute backend check-in logic
-    const res = onCheckIn(ticketId);
+    const res = await onCheckIn(ticketId);
 
     if (res.success) {
       playSound('success');

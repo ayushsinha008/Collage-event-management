@@ -117,15 +117,34 @@ export default function VolunteerApp() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/events');
+      const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const response = await fetch(`${baseURL}/events`);
       if (!response.ok) {
         throw new Error('Connection failed');
       }
       const data = await response.json();
+      
+      const mapBackendEvent = (e: any): Event => ({
+        id: e._id || e.id,
+        title: e.title,
+        description: e.description,
+        date: new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        time: e.startTime || e.time,
+        location: e.venue || e.location,
+        category: e.category,
+        organizer: e.organizer?.name || e.organizer || 'Unknown',
+        capacity: e.capacity,
+        imageUrl: e.bannerImage || e.imageUrl,
+        status: e.status,
+        registrationsCount: e.registrationsCount || 0,
+        rsvps: e.registrationsCount || 0,
+      });
+
       if (data.success) {
-        setEvents(data.data);
+        const backendEvents = data.data.events || data.data;
+        setEvents(backendEvents.map(mapBackendEvent));
       } else {
-        setEvents(data);
+        setEvents(data.map(mapBackendEvent));
       }
     } catch (err) {
       console.warn('Backend server offline, falling back to mock data.');
@@ -160,87 +179,83 @@ export default function VolunteerApp() {
     navigate('/login');
   };
 
-  const handleCheckIn = (ticketId: string) => {
-    const studentNameMap: Record<string, string> = {
-      '1': 'Alex Rivera',
-      '2': 'David Chen',
-      '3': 'Emily Watson',
-      '4': 'Sophia Martinez',
-      '5': 'Liam Harrison',
-      '6': 'Olivia Bennett'
-    };
+  const handleCheckIn = async (ticketCode: string) => {
+    // Return a promise to QRScanner or handle it properly if QRScanner expects sync.
+    // Wait, QRScanner expects a sync return. So I'll return a pending state or we should make QRScanner await it.
+    // Let's adapt QRScanner to handle promises in the next step, for now just return a dummy sync and do async in background, OR we can just return a promise and assume QRScanner will handle it if we make it async.
+    return new Promise<{ success: boolean; message: string; studentName: string; eventTitle: string }>(async (resolve) => {
+      try {
+        const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
+        // Ensure ticketCode includes prefix if they just scanned the mock ticket ID '1'
+        const codeToSend = ticketCode.startsWith('FFLOW-TKT-') ? ticketCode : `FFLOW-TKT-${ticketCode}`;
+        
+        const response = await fetch(`${baseURL}/check-in`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            // Organizer/Volunteer Auth Token
+            'Authorization': `Bearer valid_mock_token` // Ideally the real volunteer token
+          },
+          body: JSON.stringify({ qrToken: codeToSend })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          const ticket = data.data.ticket;
+          const event = data.data.event;
+          
+          setCheckedInTickets(prev => [...prev, ticketCode]);
+          setCheckedInCounts(prev => ({
+            ...prev,
+            [event._id]: (prev[event._id] || 0) + 1
+          }));
 
-    const studentName = studentNameMap[ticketId] || `Attendee #${ticketId}`;
-    
-    // Map ticketId to event.
-    const targetEventId = ['1', '2', '3', '4', '5'].includes(ticketId) ? ticketId : '1';
-    const event = events.find(e => e.id === targetEventId);
-    const eventTitle = event ? event.title : 'General Event Admission';
+          const successLog: ScanLog = {
+            id: `log-${Date.now()}`,
+            studentName: ticket.registration?.user?.name || 'Student Attendee',
+            ticketCode: codeToSend,
+            eventTitle: event?.title || 'Event Entry',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: 'success',
+            message: 'Access granted. Verified and logged.'
+          };
+          setScanLogs(prev => [successLog, ...prev]);
 
-    // 1. Verify Duplicate check-in
-    if (checkedInTickets.includes(ticketId)) {
-      const duplicateLog = {
-        id: `log-${Date.now()}`,
-        studentName,
-        ticketCode: `FFLOW-TKT-${ticketId}`,
-        eventTitle,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'failed' as const,
-        message: 'FRAUD ALERT: Duplicate scan detected!'
-      };
-      setScanLogs(prev => [duplicateLog, ...prev]);
-      return {
-        success: false,
-        message: 'Duplicate Scan! Ticket already verified.',
-        studentName,
-        eventTitle
-      };
-    }
+          resolve({
+            success: true,
+            message: 'Access granted. Welcome to the event!',
+            studentName: successLog.studentName,
+            eventTitle: successLog.eventTitle
+          });
+        } else {
+          const failedLog: ScanLog = {
+            id: `log-${Date.now()}`,
+            studentName: 'Unknown Attendee',
+            ticketCode: codeToSend,
+            eventTitle: 'Unknown Event',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: 'failed',
+            message: data.message || 'Verification Failed'
+          };
+          setScanLogs(prev => [failedLog, ...prev]);
 
-    // 2. Verify Capacity limits
-    if (event && (checkedInCounts[event.id] || 0) >= event.capacity) {
-      const capacityLog = {
-        id: `log-${Date.now()}`,
-        studentName,
-        ticketCode: `FFLOW-TKT-${ticketId}`,
-        eventTitle,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'failed' as const,
-        message: 'DENIED: Venue capacity limit reached!'
-      };
-      setScanLogs(prev => [capacityLog, ...prev]);
-      return {
-        success: false,
-        message: 'Entry denied. Venue is full.',
-        studentName,
-        eventTitle
-      };
-    }
-
-    // 3. Success check-in
-    setCheckedInTickets(prev => [...prev, ticketId]);
-    setCheckedInCounts(prev => ({
-      ...prev,
-      [targetEventId]: (prev[targetEventId] || 0) + 1
-    }));
-
-    const successLog = {
-      id: `log-${Date.now()}`,
-      studentName,
-      ticketCode: `FFLOW-TKT-${ticketId}`,
-      eventTitle,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'success' as const,
-      message: 'Access granted. Verified and logged.'
-    };
-    setScanLogs(prev => [successLog, ...prev]);
-
-    return {
-      success: true,
-      message: 'Access granted. Welcome to the event!',
-      studentName,
-      eventTitle
-    };
+          resolve({
+            success: false,
+            message: data.message || 'Invalid Ticket.',
+            studentName: 'Attendee',
+            eventTitle: 'Event'
+          });
+        }
+      } catch(err) {
+        resolve({
+          success: false,
+          message: 'Network error checking in.',
+          studentName: 'Attendee',
+          eventTitle: 'Event'
+        });
+      }
+    });
   };
 
   const [scannerOpen, setScannerOpen] = useState(false);

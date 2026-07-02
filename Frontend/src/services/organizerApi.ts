@@ -13,7 +13,7 @@ import {
 } from '../types/organizer';
 
 const API = axios.create({
-  baseURL: (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -170,7 +170,7 @@ export const organizerApi = {
 
   // Events
   getMyEvents: (params?: { status?: string; category?: string; search?: string }) =>
-    withMockFallback(() => API.get<Event[]>('/organizer/events', { params }).then((r) => r.data),
+    withMockFallback(() => API.get<Event[]>('/events', { params }).then((r) => r.data),
       mockEvents.filter((e) =>
         (!params?.status   || params.status   === 'all' || e.status === params.status) &&
         (!params?.category || params.category === 'all' || String(e.category).toLowerCase() === String(params.category).toLowerCase()) &&
@@ -178,19 +178,19 @@ export const organizerApi = {
       )
     ),
   createEvent: (data: any) =>
-    withMockFallback(() => API.post<Event>('/organizer/events', data).then((r) => r.data),
+    withMockFallback(() => API.post<Event>('/events', data).then((r) => r.data),
       { ...data, id: 'e-' + Date.now(), registrationsCount: 0, rsvps: 0, status: data.status ?? 'draft', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Event
     ),
   updateEvent: (id: string, data: Partial<Event>) =>
-    withMockFallback(() => API.put<Event>(`/organizer/events/${id}`, data).then((r) => r.data),
+    withMockFallback(() => API.patch<Event>(`/events/${id}`, data).then((r) => r.data),
       (() => { const base = mockEvents.find((e) => e.id === id); return base ? { ...base, ...data, updatedAt: new Date().toISOString() } : ({ id, ...data } as Event); })()
     ),
   deleteEvent: (id: string) =>
-    withMockFallback(() => API.delete(`/organizer/events/${id}`).then((r) => r.data), { success: true }),
+    withMockFallback(() => API.delete(`/events/${id}`).then((r) => r.data), { success: true }),
   publishEvent: (id: string) =>
-    withMockFallback(() => API.post<Event>(`/organizer/events/${id}/publish`).then((r) => r.data), mockEvents.find((e) => e.id === id) ?? mockEvents[0]),
+    withMockFallback(() => API.patch<Event>(`/events/${id}`, { status: 'published' }).then((r) => r.data), mockEvents.find((e) => e.id === id) ?? mockEvents[0]),
   getEventById: (id: string) =>
-    withMockFallback(() => API.get<Event>(`/organizer/events/${id}`).then((r) => r.data), mockEvents.find((e) => e.id === id) ?? mockEvents[0]),
+    withMockFallback(() => API.get<Event>(`/events/${id}`).then((r) => r.data), mockEvents.find((e) => e.id === id) ?? mockEvents[0]),
 
   // Registrations
   getRegistrations: (params: { eventId?: string; search?: string; status?: string }) =>

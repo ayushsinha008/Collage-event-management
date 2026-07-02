@@ -10,7 +10,9 @@ export class CheckInService {
     session.startTransaction();
 
     try {
-      const ticket = await Ticket.findOne({ qrToken }).populate({
+      const ticket = await Ticket.findOne({
+        $or: [{ qrToken: qrToken }, { ticketCode: qrToken }]
+      }).populate({
         path: 'registration',
         populate: { path: 'event' },
       }).session(session);

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Event } from './types';
 import { useAuth } from './context/AuthContext';
 import { db } from './services/firebase';
-import { collection, doc, onSnapshot, setDoc, getDocs, writeBatch, increment } from 'firebase/firestore';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import EventDashboard from './features/events/EventDashboard';
@@ -97,65 +96,63 @@ function App() {
   // User RSVP Tickets (Store event IDs the user registered for)
   const [myTickets, setMyTickets] = useState<string[]>([]);
 
-  // 1. Subscribe to Firestore events collection in real-time
-  useEffect(() => {
-    setLoading(true);
-    const eventsCollection = collection(db, 'events');
-    
-    // Seed Firestore with initial mock events if empty
-    const seedIfEmpty = async () => {
-      try {
-        const querySnapshot = await getDocs(eventsCollection);
-        if (querySnapshot.empty) {
-          for (const ev of INITIAL_MOCK_EVENTS) {
-            await setDoc(doc(db, 'events', ev.id), ev);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to seed events:', err);
+  // 1. Fetch events from MongoDB Backend API
+  const fetchEvents = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const response = await fetch(`${baseURL}/events`);
+      if (!response.ok) {
+        throw new Error('Connection failed');
       }
-    };
-    
-    seedIfEmpty();
-
-    const unsubscribe = onSnapshot(eventsCollection, (snapshot) => {
-      const eventsList: Event[] = [];
-      snapshot.forEach((docSnap) => {
-        eventsList.push({ id: docSnap.id, ...docSnap.data() } as Event);
+      const data = await response.json();
+      
+      const mapBackendEvent = (e: any): Event => ({
+        id: e._id || e.id,
+        title: e.title,
+        description: e.description,
+        date: new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        time: e.startTime || e.time,
+        location: e.venue || e.location,
+        category: e.category,
+        organizer: e.organizer?.name || e.organizer || 'Unknown',
+        capacity: e.capacity,
+        imageUrl: e.bannerImage || e.imageUrl,
+        status: e.status,
+        registrationsCount: e.registrationsCount || 0,
+        rsvps: e.registrationsCount || 0,
       });
-      setEvents(eventsList.sort((a, b) => Number(a.id) - Number(b.id)));
-      setLoading(false);
+
+      if (data.success) {
+        const backendEvents = data.data.events || data.data;
+        setEvents(backendEvents.map(mapBackendEvent));
+      } else {
+        setEvents(data.map(mapBackendEvent));
+      }
       setError(null);
-    }, (err) => {
-      console.error('Firestore connection error, falling back to local mocks:', err);
+    } catch (err) {
+      console.warn('Backend server offline, falling back to mock data.');
       setEvents(INITIAL_MOCK_EVENTS);
       setError('Offline Mode (Mock Server Active)');
-      setLoading(false);
-    });
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
 
-    return () => unsubscribe();
+  useEffect(() => {
+    fetchEvents();
+    // Poll for live updates every 10 seconds silently
+    const interval = setInterval(() => fetchEvents(true), 10000);
+    return () => clearInterval(interval);
   }, []);
 
-  // 2. Subscribe to user bookings in real-time
+  // 2. Fetch User Bookings (if logged in)
   useEffect(() => {
-    if (!user || user.role !== 'student') {
+    // For demo/UI consistency, we'll store local tickets if we don't have an endpoint for my-tickets yet
+    // But we will use the RSVP handler below to actually hit the backend
+    if (!user) {
       setMyTickets([]);
-      return;
     }
-
-    const bookingsCollection = collection(db, 'bookings');
-    const unsubscribe = onSnapshot(bookingsCollection, (snapshot) => {
-      const tickets: string[] = [];
-      snapshot.forEach((docSnap) => {
-        const booking = docSnap.data();
-        if (booking.userId === user.id) {
-          tickets.push(booking.eventId);
-        }
-      });
-      setMyTickets(tickets);
-    });
-
-    return () => unsubscribe();
   }, [user]);
 
   // 3. Synchronize selectedEvent details view when events change
@@ -168,38 +165,59 @@ function App() {
     }
   }, [events]);
 
-  // Handle RSVP with Firestore batch transactions
+  // Handle RSVP with Backend
   const handleRegister = async (event: Event) => {
-    if (!user) return;
+    if (!user) {
+      alert('Please Login with Google first to RSVP for events!');
+      return;
+    }
+
     const isRegistered = myTickets.includes(event.id);
-    const bookingDocId = `${user.id}_${event.id}`;
-    const bookingRef = doc(db, 'bookings', bookingDocId);
-    const eventRef = doc(db, 'events', event.id);
+    const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
+    
+    // AuthContext stores the token in localStorage as 'token' typically, or we can get it from the user provider.
+    // If the AuthContext provides user.token or similar, use it. Otherwise, look for it.
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+    
+    if (!token) {
+       alert("Error: Token not found. Please log out and log in again.");
+       return;
+    }
 
     try {
-      const batch = writeBatch(db);
       if (isRegistered) {
-        batch.delete(bookingRef);
-        batch.update(eventRef, {
-          rsvps: increment(-1)
+        // Un-register
+        await fetch(`${baseURL}/events/${event.id}/cancel`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        setMyTickets(prev => prev.filter(id => id !== event.id));
+        setEvents(prev => prev.map(e => e.id === event.id ? { ...e, rsvps: (e.rsvps||0) - 1 } : e));
       } else {
-        batch.set(bookingRef, {
-          id: bookingDocId,
-          userId: user.id,
-          eventId: event.id,
-          studentName: user.name,
-          studentEmail: user.email,
-          eventTitle: event.title,
-          timestamp: new Date().toISOString()
+        // Register
+        const response = await fetch(`${baseURL}/events/${event.id}/register`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-        batch.update(eventRef, {
-          rsvps: increment(1)
-        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          // The backend returns the QR code and ticket details
+          setMyTickets(prev => [...prev, event.id]);
+          setEvents(prev => prev.map(e => e.id === event.id ? { ...e, rsvps: (e.rsvps||0) + 1 } : e));
+          
+          if (data.data && data.data.qrCode) {
+             alert(`Success! Your Ticket Code is: ${data.data.ticket?.ticketCode}`);
+          }
+        } else {
+           const errData = await response.json();
+           alert(`Failed: ${errData.message || 'Could not register'}`);
+        }
       }
-      await batch.commit();
-    } catch (err) {
-      console.error('Firestore RSVP update failed:', err);
+    } catch(err) {
+      console.error('Backend RSVP update failed:', err);
+      alert('Action failed. Please try again later.');
     }
   };
 
