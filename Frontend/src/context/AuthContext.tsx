@@ -61,8 +61,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
+    const loadingTimeout = window.setTimeout(() => {
+      setLoading(false);
+    }, 8000);
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
+      const savedUserRaw = localStorage.getItem('auth_user');
+      let savedUser: User | null = null;
+      if (savedUserRaw) {
+        try {
+          savedUser = JSON.parse(savedUserRaw) as User;
+        } catch {
+          savedUser = null;
+        }
+      }
+
+      const isStaffSession =
+        savedUser?.role === 'organizer' || savedUser?.role === 'volunteer';
+
+      if (firebaseUser && !isStaffSession) {
         const token = await firebaseUser.getIdToken();
         localStorage.setItem('auth_token', token);
 
@@ -83,6 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         }
+      } else if (isStaffSession && savedUser) {
+        setUser(savedUser);
       } else {
         const saved = localStorage.getItem('auth_user');
         if (saved) {
@@ -104,7 +123,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      window.clearTimeout(loadingTimeout);
+      unsubscribe();
+    };
   }, [syncUserFromBackend]);
 
   const signInWithGoogle = async (): Promise<User> => {
@@ -119,7 +141,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return loggedInUser;
   };
 
-  const completeStaffSession = (profile: any, role: 'organizer' | 'volunteer', token: string) => {
+  const completeStaffSession = async (profile: any, role: 'organizer' | 'volunteer', token: string) => {
+    try {
+      await signOut(auth);
+    } catch {
+      // ignore if no firebase session
+    }
+
     const loggedInUser = profile?.uid
       ? buildUserFromProfile(profile, profile.uid)
       : buildLocalStaffUser(role);
@@ -138,15 +166,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { customToken, user: profile } = await studentApi.staffLogin(passcode, role);
 
       if (customToken.startsWith('festflow-staff-')) {
-        return completeStaffSession(profile, role, customToken);
+        return await completeStaffSession(profile, role, customToken);
       }
 
       const credential = await signInWithCustomToken(auth, customToken);
       const token = await credential.user.getIdToken();
-      return completeStaffSession(profile, role, token);
+      return await completeStaffSession(profile, role, token);
     } catch (err) {
       console.warn('Staff login via API failed, using local session.', err);
-      return completeStaffSession(null, role, `festflow-staff-${role}`);
+      return await completeStaffSession(null, role, `festflow-staff-${role}`);
     }
   };
 

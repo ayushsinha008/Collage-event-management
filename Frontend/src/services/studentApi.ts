@@ -1,11 +1,10 @@
 import axios from 'axios';
 import { getAuthToken } from '../utils/authToken';
 import { Event } from '../types/event';
-
-const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from '../config/api';
 
 const API = axios.create({
-  baseURL,
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -33,14 +32,25 @@ export const mapBackendEvent = (e: any): Event => ({
   imageUrl: e.bannerImage || e.imageUrl,
   registrationsCount: e.registrationCount ?? e.registrationsCount ?? 0,
   rsvps: e.registrationCount ?? e.registrationsCount ?? 0,
+  checkedInCount: e.checkedInCount ?? 0,
 });
 
 export const studentApi = {
   getEvents: async (): Promise<Event[]> => {
-    const { data } = await API.get('/events');
-    const payload = unwrap<{ events?: any[]; total?: number } | any[]>(data);
-    const events = Array.isArray(payload) ? payload : payload.events || [];
-    return events.map(mapBackendEvent);
+    const parseEvents = (data: any) => {
+      const payload = unwrap<{ events?: any[]; total?: number } | any[]>(data);
+      const events = Array.isArray(payload) ? payload : payload.events || [];
+      return events.map(mapBackendEvent);
+    };
+
+    try {
+      const { data } = await API.get('/events');
+      return parseEvents(data);
+    } catch (err) {
+      // Public endpoint — retry without auth if token/session caused the failure
+      const { data } = await axios.get(`${API_BASE_URL}/events`);
+      return parseEvents(data);
+    }
   },
 
   getMyTickets: async () => {
@@ -77,7 +87,7 @@ export const studentApi = {
   },
 
   staffLogin: async (passcode: string, role: 'organizer' | 'volunteer') => {
-    const { data } = await axios.post(`${baseURL}/auth/staff-login`, { passcode, role });
+    const { data } = await axios.post(`${API_BASE_URL}/auth/staff-login`, { passcode, role });
     return unwrap<{ customToken: string; user: any }>(data);
   },
 };

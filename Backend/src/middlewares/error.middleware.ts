@@ -56,5 +56,7 @@ export const errorMiddleware = (
     console.error(`[TEST ERROR] ${message}`, err.stack);
   }
 
+  require('fs').appendFileSync('backend_errors.log', JSON.stringify({ message, statusCode, stack: err.stack, query: req.query }) + '\\n');
+
   sendError(req, res, statusCode, message, errors.length > 0 ? errors : undefined);
 };

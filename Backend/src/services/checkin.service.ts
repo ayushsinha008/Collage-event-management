@@ -14,7 +14,10 @@ export class CheckInService {
         $or: [{ qrToken: qrToken }, { ticketCode: qrToken }]
       }).populate({
         path: 'registration',
-        populate: { path: 'event' },
+        populate: [
+          { path: 'event' },
+          { path: 'user', select: 'name email' },
+        ],
       }).session(session);
 
       if (!ticket) {

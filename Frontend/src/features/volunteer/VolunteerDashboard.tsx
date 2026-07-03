@@ -14,7 +14,6 @@ interface ScanLog {
 interface VolunteerDashboardProps {
   events: Event[];
   scanLogs: ScanLog[];
-  checkedInCounts: Record<string, number>;
   onStartScanning: () => void;
   selectedEventId: string | 'all';
   setSelectedEventId: (id: string | 'all') => void;
@@ -23,7 +22,6 @@ interface VolunteerDashboardProps {
 export default function VolunteerDashboard({
   events,
   scanLogs,
-  checkedInCounts,
   onStartScanning,
   selectedEventId,
   setSelectedEventId
@@ -35,7 +33,7 @@ export default function VolunteerDashboard({
     : events.filter(e => e.id === selectedEventId);
 
   const totalRegistered = filteredEvents.reduce((acc, curr) => acc + (curr.rsvps ?? 0), 0);
-  const totalCheckedIn = filteredEvents.reduce((acc, curr) => acc + (checkedInCounts[curr.id] || 0), 0);
+  const totalCheckedIn = filteredEvents.reduce((acc, curr) => acc + (curr.checkedInCount ?? 0), 0);
   const totalRemaining = Math.max(0, totalRegistered - totalCheckedIn);
   const checkInRate = totalRegistered > 0 ? Math.round((totalCheckedIn / totalRegistered) * 100) : 0;
 
@@ -182,7 +180,7 @@ export default function VolunteerDashboard({
             </h3>
             <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
               {filteredEvents.map(event => {
-                const eventChecked = checkedInCounts[event.id] || 0;
+                const eventChecked = event.checkedInCount ?? 0;
                 const percent = (event.rsvps ?? 0) > 0 ? Math.round((eventChecked / (event.rsvps ?? 1)) * 100) : 0;
                 return (
                   <div key={event.id} className="p-4 rounded-xl bg-orange-50/40 border-2 border-black space-y-3">

@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Event } from './types/event';
 import { Camera, Zap, LayoutDashboard } from 'lucide-react';
 import VolunteerDashboard from './features/volunteer/VolunteerDashboard';
-import QRScanner from './features/volunteer/QRScanner';
 import { studentApi } from './services/studentApi';
 import { useAuth } from './context/AuthContext';
 import { getAuthToken } from './utils/authToken';
+import { API_BASE_URL } from './config/api';
+
+const QRScanner = lazy(() => import('./features/volunteer/QRScanner'));
 
 interface ScanLog {
   id: string;
@@ -26,7 +28,6 @@ export default function VolunteerApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | 'all'>('all');
-  const [checkedInCounts, setCheckedInCounts] = useState<Record<string, number>>({});
   const [scanLogs, setScanLogs] = useState<ScanLog[]>([]);
   const [scannerOpen, setScannerOpen] = useState(false);
 
@@ -55,13 +56,12 @@ export default function VolunteerApp() {
 
   const handleCheckIn = async (qrToken: string) => {
     try {
-      const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
       const token = await getAuthToken();
       if (!token) {
         return { success: false, message: 'Not authenticated.', studentName: '', eventTitle: '' };
       }
 
-      const response = await fetch(`${baseURL}/check-in`, {
+      const response = await fetch(`${API_BASE_URL}/check-in`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,11 +78,17 @@ export default function VolunteerApp() {
         const studentName = ticket?.registration?.user?.name || 'Student Attendee';
         const eventTitle = event?.title || 'Event Entry';
         const ticketCode = ticket?.ticketCode || qrToken;
+        const eventId = event?._id || event?.id;
 
-        setCheckedInCounts((prev) => ({
-          ...prev,
-          [event._id]: (prev[event._id] || 0) + 1,
-        }));
+        if (eventId) {
+          setEvents((prev) =>
+            prev.map((e) =>
+              e.id === eventId
+                ? { ...e, checkedInCount: event.checkedInCount ?? (e.checkedInCount ?? 0) + 1 }
+                : e
+            )
+          );
+        }
 
         const successLog: ScanLog = {
           id: `log-${Date.now()}`,
@@ -195,7 +201,6 @@ export default function VolunteerApp() {
             <VolunteerDashboard
               events={events}
               scanLogs={scanLogs}
-              checkedInCounts={checkedInCounts}
               onStartScanning={() => setScannerOpen(true)}
               selectedEventId={selectedEventId}
               setSelectedEventId={setSelectedEventId}
@@ -215,13 +220,12 @@ export default function VolunteerApp() {
         </div>
 
         {scannerOpen && (
-          <QRScanner
-            events={events}
-            myTickets={[]}
-            checkedInCounts={checkedInCounts}
-            onCheckIn={handleCheckIn}
-            onClose={() => setScannerOpen(false)}
-          />
+          <Suspense fallback={null}>
+            <QRScanner
+              onCheckIn={handleCheckIn}
+              onClose={() => setScannerOpen(false)}
+            />
+          </Suspense>
         )}
       </main>
     </div>

@@ -24,7 +24,7 @@ export const useOrganizerEvents = (initialFilters: EventFilters = {}) => {
       setEvents(data);
       setError(null);
     } catch (e: any) {
-      setError(e.message);
+      setError(e.response?.data?.message || e.message);
     } finally {
       setLoading(false);
     }

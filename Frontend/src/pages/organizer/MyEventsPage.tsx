@@ -37,7 +37,7 @@ const eventFromForm = (form: HTMLFormElement): Omit<Event, 'id'> => {
 export const MyEventsPage: React.FC = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { events, loading, filters, setFilters, create, update, remove } = useOrganizerEvents();
+  const { events, loading, error, filters, setFilters, create, update, remove } = useOrganizerEvents();
   const [editing, setEditing] = useState<Event | null>(null);
   const [showCreate, setShowCreate] = useState(params.get('create') === 'true');
 
@@ -101,7 +101,7 @@ export const MyEventsPage: React.FC = () => {
       ) : events.length === 0 ? (
         <div className="bg-surface border-4 border-on-background p-12 text-center neo-shadow">
           <p className="text-lg font-label-bold text-on-surface-variant uppercase tracking-wide">
-            No events yet. Create your first event!
+            {error ? `ERROR: ${typeof error === 'object' ? JSON.stringify(error) : error}` : 'No events yet. Create your first event!'}
           </p>
         </div>
       ) : (

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getAuthToken } from '../utils/authToken';
+import { API_BASE_URL } from '../config/api';
 import { Event } from '../types/event';
 import {
   Organizer,
@@ -14,7 +15,7 @@ import {
 } from '../types/organizer';
 
 const API = axios.create({
-  baseURL: (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 

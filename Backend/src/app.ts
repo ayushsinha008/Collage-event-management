@@ -35,10 +35,17 @@ app.use(mongoSanitize());
 app.use(hpp());
 app.disable('x-powered-by');
 
-// CORS
+// CORS — allow any localhost port in development (Vite may use 5174 if 5173 is busy)
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (env.NODE_ENV === 'development' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+      if (origin === env.FRONTEND_URL) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   })
 );

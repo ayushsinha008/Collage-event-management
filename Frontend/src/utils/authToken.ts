@@ -1,14 +1,31 @@
 import { auth } from '../services/firebase';
 
-/** Returns a fresh Firebase ID token for API calls. */
+const STAFF_TOKEN_PREFIX = 'festflow-staff-';
+
+export function isStaffSessionToken(token: string | null | undefined): boolean {
+  return !!token?.startsWith(STAFF_TOKEN_PREFIX);
+}
+
+/** Returns the auth token for API calls (staff session or Firebase). */
 export async function getAuthToken(): Promise<string | null> {
+  const stored = localStorage.getItem('auth_token');
+
+  if (isStaffSessionToken(stored)) {
+    return stored;
+  }
+
   const currentUser = auth.currentUser;
   if (currentUser) {
-    const token = await currentUser.getIdToken(true);
-    localStorage.setItem('auth_token', token);
-    return token;
+    try {
+      const token = await currentUser.getIdToken();
+      localStorage.setItem('auth_token', token);
+      return token;
+    } catch {
+      return stored;
+    }
   }
-  return localStorage.getItem('auth_token');
+
+  return stored;
 }
 
 export function mapBackendRole(role: string): 'student' | 'organizer' | 'volunteer' {
