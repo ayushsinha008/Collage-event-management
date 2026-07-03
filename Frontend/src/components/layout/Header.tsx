@@ -71,27 +71,6 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="hidden md:flex items-center gap-4 mr-6">
-          <button
-            onClick={() => { setCurrentTab('dashboard'); setSelectedEvent(null); }}
-            className={`px-4 py-2 border-4 transition-all uppercase text-xs font-label-bold ${currentTab === 'dashboard' && !selectedEvent ? 'bg-[#ffe24c] text-on-background border-on-background neo-shadow-sm font-bold' : 'bg-white text-on-background border-on-background hover:bg-[#ffe24c] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => { setCurrentTab('events'); setSelectedEvent(null); }}
-            className={`px-4 py-2 border-4 transition-all uppercase text-xs font-label-bold ${currentTab === 'events' && !selectedEvent ? 'bg-[#ffe24c] text-on-background border-on-background neo-shadow-sm font-bold' : 'bg-white text-on-background border-on-background hover:bg-[#ffe24c] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
-          >
-            Events
-          </button>
-          <button
-            onClick={() => { setCurrentTab('tickets'); setSelectedEvent(null); }}
-            className={`px-4 py-2 border-4 transition-all uppercase text-xs font-label-bold ${currentTab === 'tickets' ? 'bg-[#ffe24c] text-on-background border-on-background neo-shadow-sm font-bold' : 'bg-white text-on-background border-on-background hover:bg-[#ffe24c] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
-          >
-            Tickets
-          </button>
-
-        </div>
 
         <div className="flex items-center gap-2 md:gap-4">
 
