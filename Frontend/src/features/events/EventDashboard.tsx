@@ -8,6 +8,7 @@ interface EventDashboardProps {
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
   searchQuery: string;
+  registeringEventId?: string | null;
 }
 
 export default function EventDashboard({
@@ -17,7 +18,8 @@ export default function EventDashboard({
   setSelectedEvent,
   selectedCategory,
   setSelectedCategory,
-  searchQuery
+  searchQuery,
+  registeringEventId
 }: EventDashboardProps) {
   
   // Filter events based on active category selection and search query
@@ -348,14 +350,18 @@ export default function EventDashboard({
                     <span>{event.date}</span>
                   </div>
                   <button
+                    disabled={registeringEventId === event.id}
                     onClick={(e) => { e.stopPropagation(); handleRegister(event); }}
                     className={`w-full py-2 border-2 border-on-background font-label-bold uppercase text-xs hover-lift press-down ${
                       myTickets.includes(event.id)
                         ? 'bg-[#ba1a1a] text-white border-[#ba1a1a]'
                         : 'bg-white hover:bg-on-background hover:text-white'
-                    }`}
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    {myTickets.includes(event.id) ? 'Cancel Ticket' : 'Secure Pass'}
+                    {registeringEventId === event.id 
+                      ? 'Please wait...' 
+                      : (myTickets.includes(event.id) ? 'Cancel Ticket' : 'Secure Pass')
+                    }
                   </button>
                 </div>
               </div>

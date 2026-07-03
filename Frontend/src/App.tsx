@@ -71,13 +71,18 @@ function App() {
     }
   }, [events, selectedEvent]);
 
+  const [registeringEventId, setRegisteringEventId] = useState<string | null>(null);
+
   const handleRegister = async (event: Event) => {
     if (!user) {
       alert('Please sign in with Google first to RSVP for events.');
       return;
     }
+    
+    if (registeringEventId) return;
 
     const isRegistered = myTickets.includes(event.id);
+    setRegisteringEventId(event.id);
 
     try {
       if (isRegistered) {
@@ -97,6 +102,8 @@ function App() {
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || 'Action failed. Please try again.';
       alert(message);
+    } finally {
+      setRegisteringEventId(null);
     }
   };
 
@@ -161,6 +168,7 @@ function App() {
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
               searchQuery={searchQuery}
+              registeringEventId={registeringEventId}
             />
           ) : (
             <TicketWallet
