@@ -30,8 +30,12 @@ export default function TicketWallet({
               ticketDetail.registration?.event?._id ||
               ticketDetail.registration?.event?.id ||
               ticketDetail.registration?.event;
-            const event = events.find((e) => e.id === eventId);
-            if (!event) return null;
+            const event = events.find((e) => e.id === eventId) || {
+              title: ticketDetail.registration?.event?.title || 'Unknown Event',
+              date: 'TBD',
+              time: 'TBD',
+              location: 'TBD'
+            } as any;
 
             const qrCodeUrl = ticketDetail.qrCodeDataUri || ticketDetail.qrCode;
             const ticketCode = ticketDetail.ticketCode;

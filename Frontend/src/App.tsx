@@ -22,6 +22,12 @@ function App() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const [myTicketDetails, setMyTicketDetails] = useState<any[]>([]);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
 
   const myTickets = myTicketDetails
     .map((t) => t.registration?.event?._id || t.registration?.event?.id || t.registration?.event)
@@ -75,7 +81,7 @@ function App() {
 
   const handleRegister = async (event: Event) => {
     if (!user) {
-      alert('Please sign in with Google first to RSVP for events.');
+      showToast('Please sign in with Google first to RSVP for events.');
       return;
     }
     
@@ -92,7 +98,7 @@ function App() {
       } else {
         const result = await studentApi.registerForEvent(event.id);
         if (result.ticket) {
-          alert(`Ticket booked! Your code: ${result.ticket.ticketCode}`);
+          showToast(`Ticket booked! Your code: ${result.ticket.ticketCode}`);
         }
         await fetchTickets();
         await fetchEvents(true);
@@ -101,7 +107,7 @@ function App() {
       }
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || 'Action failed. Please try again.';
-      alert(message);
+      showToast(message);
     } finally {
       setRegisteringEventId(null);
     }
@@ -205,6 +211,12 @@ function App() {
           </button>
         </nav>
       </main>
+
+      {toastMsg && (
+        <div className="fixed bottom-4 right-4 bg-primary text-on-primary px-6 py-3 border-4 border-on-background neo-shadow animate-in slide-in-from-bottom-2 z-[100]">
+          <p className="font-label-bold tracking-wider">{toastMsg}</p>
+        </div>
+      )}
     </div>
   );
 }

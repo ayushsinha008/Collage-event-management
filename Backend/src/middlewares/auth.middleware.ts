@@ -17,12 +17,6 @@ const STAFF_SESSIONS: Record<string, { uid: string; email: string; name: string;
     email: 'volunteer@festflow.internal',
     name: 'FestFlow Volunteer',
     role: Role.VOLUNTEER,
-  },
-  'festflow-student-test': {
-    uid: 'vzzP3UcLllg25Z3uDEUwicHv7YH3',
-    email: 'ayushsinha391@gmail.com', // Match the user's email to get their ID!
-    name: 'Test Student',
-    role: Role.STUDENT,
   }
 };
 

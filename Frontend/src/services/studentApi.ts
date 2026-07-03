@@ -57,7 +57,6 @@ export const studentApi = {
     const { data } = await API.get('/users/me/tickets');
     const payload = unwrap<any[] | { tickets: any[] }>(data);
     const tickets = Array.isArray(payload) ? payload : payload.tickets || [];
-    console.log('FRONTEND FETCHED TICKETS:', tickets);
     return tickets;
   },
 
