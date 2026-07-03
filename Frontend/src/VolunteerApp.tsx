@@ -8,6 +8,7 @@ import { useAuth } from './context/AuthContext';
 import { getAuthToken } from './utils/authToken';
 import { API_BASE_URL } from './config/api';
 import { normalizeTicketScan } from './utils/ticketScan';
+import { stopCameraTracksNow } from './utils/cameraCleanup';
 
 const QRScanner = lazy(() => import('./features/volunteer/QRScanner'));
 
@@ -31,6 +32,7 @@ export default function VolunteerApp() {
   const [selectedEventId, setSelectedEventId] = useState<string | 'all'>('all');
   const [scanLogs, setScanLogs] = useState<ScanLog[]>([]);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerKey, setScannerKey] = useState(0);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -146,7 +148,10 @@ export default function VolunteerApp() {
 
         <nav className="flex-grow px-4 py-6 space-y-3 bg-white">
           <button
-            onClick={() => setScannerOpen(false)}
+            onClick={() => {
+              stopCameraTracksNow();
+              setScannerOpen(false);
+            }}
             className={`w-full flex items-center gap-3 px-4 py-3 border-2 border-black font-black transition-all ${
               !scannerOpen
                 ? 'bg-yellow-400 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] translate-x-0.5 -translate-y-0.5'
@@ -157,7 +162,10 @@ export default function VolunteerApp() {
             Dashboard
           </button>
           <button
-            onClick={() => setScannerOpen(true)}
+            onClick={() => {
+              setScannerKey((k) => k + 1);
+              setScannerOpen(true);
+            }}
             className={`w-full flex items-center gap-3 px-4 py-3 border-2 border-black font-black transition-all ${
               scannerOpen
                 ? 'bg-yellow-400 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] translate-x-0.5 -translate-y-0.5'
@@ -203,7 +211,10 @@ export default function VolunteerApp() {
             <VolunteerDashboard
               events={events}
               scanLogs={scanLogs}
-              onStartScanning={() => setScannerOpen(true)}
+              onStartScanning={() => {
+                setScannerKey((k) => k + 1);
+                setScannerOpen(true);
+              }}
               selectedEventId={selectedEventId}
               setSelectedEventId={setSelectedEventId}
             />
@@ -224,8 +235,12 @@ export default function VolunteerApp() {
         {scannerOpen && (
           <Suspense fallback={null}>
             <QRScanner
+              key={scannerKey}
               onCheckIn={handleCheckIn}
-              onClose={() => setScannerOpen(false)}
+              onClose={() => {
+                stopCameraTracksNow();
+                setScannerOpen(false);
+              }}
             />
           </Suspense>
         )}
