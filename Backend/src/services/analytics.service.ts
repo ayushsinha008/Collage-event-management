@@ -69,11 +69,57 @@ export class AnalyticsService {
     const upcomingEvents = await Event.find({
       ...matchEvent,
       date: { $gte: new Date() },
-      status: 'Upcoming'
+      status: { $in: ['Upcoming', 'Ongoing'] },
     })
       .sort({ date: 1 })
       .limit(5)
-      .select('title date venue capacity registrationCount');
+      .select('title date venue capacity registrationCount checkedInCount bannerImage category status startTime description');
+
+    const activeEvents = await Event.countDocuments({
+      ...matchEvent,
+      status: { $in: ['Upcoming', 'Ongoing'] },
+    });
+
+    const totalRegistrationsAgg = await Event.aggregate([
+      { $match: matchEvent },
+      { $group: { _id: null, total: { $sum: '$registrationCount' } } },
+    ]);
+    const totalRegistrations = totalRegistrationsAgg[0]?.total ?? 0;
+
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    let thisWeekRegistrations = 0;
+    if (isOrganizer) {
+      const orgEvents = await Event.find({ organizer: user._id, isDeleted: false }).select('_id');
+      const orgEventIds = orgEvents.map((e) => e._id);
+      thisWeekRegistrations = await Registration.countDocuments({
+        event: { $in: orgEventIds },
+        registeredAt: { $gte: weekAgo },
+      });
+    } else {
+      thisWeekRegistrations = await Registration.countDocuments({
+        registeredAt: { $gte: weekAgo },
+      });
+    }
+
+    let recentActivity: any[] = [];
+    if (isOrganizer) {
+      const orgEvents = await Event.find({ organizer: user._id, isDeleted: false }).select('_id title');
+      const orgEventIds = orgEvents.map((e) => e._id);
+      const eventTitleMap = Object.fromEntries(orgEvents.map((e) => [e._id.toString(), e.title]));
+      const recentRegs = await Registration.find({ event: { $in: orgEventIds } })
+        .sort({ registeredAt: -1 })
+        .limit(8)
+        .populate('user', 'name');
+      recentActivity = recentRegs.map((r: any) => ({
+        id: r._id.toString(),
+        type: 'registration',
+        message: `${r.user?.name || 'Student'} registered for ${eventTitleMap[r.event.toString()] || 'an event'}`,
+        timestamp: r.registeredAt,
+        eventId: r.event.toString(),
+        eventTitle: eventTitleMap[r.event.toString()],
+      }));
+    }
 
     // Monthly Registrations (Last 6 months)
     const sixMonthsAgo = new Date();
@@ -118,10 +164,14 @@ export class AnalyticsService {
       totalEvents,
       totalStudents,
       todayRegistrations,
+      activeEvents,
+      totalRegistrations,
+      thisWeekRegistrations,
       attendancePercentage: Math.round(attendancePercentage),
       topEvents,
       upcomingEvents,
-      monthlyRegistrations
+      monthlyRegistrations,
+      recentActivity,
     };
   }
 

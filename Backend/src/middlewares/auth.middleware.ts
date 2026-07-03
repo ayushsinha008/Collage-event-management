@@ -20,6 +20,11 @@ const STAFF_SESSIONS: Record<string, { uid: string; email: string; name: string;
   }
 };
 
+const STAFF_BY_UID: Record<string, (typeof STAFF_SESSIONS)[string]> = {
+  'festflow-organizer': STAFF_SESSIONS['festflow-staff-organizer'],
+  'festflow-volunteer': STAFF_SESSIONS['festflow-staff-volunteer'],
+};
+
 const attachStaffSession = async (req: AuthRequest, session: typeof STAFF_SESSIONS[string], next: NextFunction) => {
   let user = await User.findOne({ uid: session.uid });
 
@@ -65,6 +70,10 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     const { uid, email, name, picture } = decodedToken;
 
     if (!email) {
+      const staffSession = STAFF_BY_UID[uid];
+      if (staffSession) {
+        return attachStaffSession(req, staffSession, next);
+      }
       return next(new ApiError(400, 'Token does not contain an email address.'));
     }
 

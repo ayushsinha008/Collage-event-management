@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { OrganizerProvider, useOrganizerContext } from './context/OrganizerContext';
 import { OrganizerLayout } from './components/organizer/layout/OrganizerLayout';
-import { OrganizerLoginPage } from './pages/organizer/OrganizerLoginPage';
 import { DashboardPage } from './pages/organizer/DashboardPage';
 import { MyEventsPage } from './pages/organizer/MyEventsPage';
 import { CreateEventPage } from './pages/organizer/CreateEventPage';
@@ -27,7 +26,7 @@ const OrganizerAppContent: React.FC = () => {
   }
 
   if (!organizer) {
-    return <OrganizerLoginPage />;
+    return <Navigate to="/login" replace />;
   }
 
   return (

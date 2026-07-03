@@ -10,6 +10,7 @@ export interface IUser extends Document {
   college?: string;
   department?: string;
   year?: string;
+  organizerPreferences?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +55,10 @@ const userSchema = new Schema<IUser>(
     year: {
       type: String,
       trim: true,
+    },
+    organizerPreferences: {
+      type: Schema.Types.Mixed,
+      default: null,
     },
   },
   {

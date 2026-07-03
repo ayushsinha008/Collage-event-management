@@ -15,10 +15,10 @@ interface HeaderProps {
 export default function Header({
   searchQuery,
   setSearchQuery,
-  currentTab,
-  setCurrentTab,
-  selectedEvent,
-  setSelectedEvent
+  currentTab: _currentTab,
+  setCurrentTab: _setCurrentTab,
+  selectedEvent: _selectedEvent,
+  setSelectedEvent: _setSelectedEvent,
 }: HeaderProps) {
 
   const { user, logout, updatePfp } = useAuth();

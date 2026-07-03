@@ -135,57 +135,68 @@ function App() {
 
         <div className="p-6 md:p-margin-desktop flex-grow">
           {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center space-y-4">
+            <div key="loading" className="py-20 flex flex-col items-center justify-center space-y-4">
               <div className="w-12 h-12 border-4 border-on-background border-t-primary rounded-full animate-spin"></div>
               <p className="font-label-bold text-on-surface-variant">LOADING CAMPUS PLATFORM...</p>
             </div>
           ) : error && events.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center space-y-4 text-center">
-              <span className="material-symbols-outlined text-5xl text-error">cloud_off</span>
-              <p className="font-label-bold text-on-surface-variant uppercase">{error}</p>
+            <div key="error" className="py-20 text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#fff5f5] text-[#ba1a1a] border-4 border-[#ba1a1a] rounded-full mb-4">
+                <span className="material-symbols-outlined text-3xl">error</span>
+              </div>
+              <h3 className="font-headline-lg text-xl uppercase font-bold text-slate-800">Connection Error</h3>
+              <p className="text-slate-500 max-w-md mx-auto">{error}</p>
               <button
                 onClick={() => fetchEvents()}
-                className="bg-primary text-white border-4 border-on-background neo-shadow-sm px-6 py-2.5 font-label-bold uppercase text-xs hover-lift press-down"
+                className="mt-4 bg-white border-4 border-on-background hover:bg-surface-variant px-6 py-2 font-label-bold text-sm uppercase transition-all shadow-[4px_4px_0_#000]"
               >
                 Retry
               </button>
             </div>
           ) : selectedEvent ? (
-            <EventDetail
-              event={selectedEvent}
-              myTickets={myTickets}
-              handleRegister={handleRegister}
-              setSelectedEvent={setSelectedEvent}
-            />
+            <div key="detail">
+              <EventDetail
+                event={selectedEvent}
+                myTickets={myTickets}
+                handleRegister={handleRegister}
+                setSelectedEvent={setSelectedEvent}
+              />
+            </div>
           ) : currentTab === 'dashboard' ? (
-            <StudentDashboard
-              events={events}
-              myTickets={myTickets}
-              handleRegister={handleRegister}
-              setSelectedEvent={setSelectedEvent}
-              setCurrentTab={setCurrentTab}
-              searchQuery={searchQuery}
-            />
+            <div key="dashboard">
+              <StudentDashboard
+                events={events}
+                myTickets={myTickets}
+                handleRegister={handleRegister}
+                setSelectedEvent={setSelectedEvent}
+                setCurrentTab={setCurrentTab}
+                searchQuery={searchQuery}
+              />
+            </div>
           ) : currentTab === 'events' ? (
-            <EventDashboard
-              events={events}
-              myTickets={myTickets}
-              handleRegister={handleRegister}
-              setSelectedEvent={setSelectedEvent}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              searchQuery={searchQuery}
-              registeringEventId={registeringEventId}
-            />
+            <div key="events">
+              <EventDashboard
+                events={events}
+                myTickets={myTickets}
+                handleRegister={handleRegister}
+                setSelectedEvent={setSelectedEvent}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                searchQuery={searchQuery}
+                registeringEventId={registeringEventId}
+              />
+            </div>
           ) : (
-            <TicketWallet
-              events={events}
-              myTickets={myTickets}
-              ticketDetails={myTicketDetails}
-              handleRegister={handleRegister}
-              setCurrentTab={setCurrentTab}
-              searchQuery={searchQuery}
-            />
+            <div key="tickets">
+              <TicketWallet
+                events={events}
+                myTickets={myTickets}
+                ticketDetails={myTicketDetails}
+                handleRegister={handleRegister}
+                setCurrentTab={setCurrentTab}
+                searchQuery={searchQuery}
+              />
+            </div>
           )}
         </div>
 

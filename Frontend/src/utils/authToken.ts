@@ -6,10 +6,31 @@ export function isStaffSessionToken(token: string | null | undefined): boolean {
   return !!token?.startsWith(STAFF_TOKEN_PREFIX);
 }
 
+function getStaffTokenFromSession(): string | null {
+  const savedUserRaw = localStorage.getItem('auth_user');
+  if (!savedUserRaw) return null;
+
+  try {
+    const savedUser = JSON.parse(savedUserRaw) as { role?: string };
+    if (savedUser.role === 'organizer' || savedUser.role === 'volunteer') {
+      return `${STAFF_TOKEN_PREFIX}${savedUser.role}`;
+    }
+  } catch {
+    // ignore invalid JSON
+  }
+
+  return null;
+}
+
 /** Returns the auth token for API calls (staff session or Firebase). */
 export async function getAuthToken(): Promise<string | null> {
-  const stored = localStorage.getItem('auth_token');
+  const staffToken = getStaffTokenFromSession();
+  if (staffToken) {
+    localStorage.setItem('auth_token', staffToken);
+    return staffToken;
+  }
 
+  const stored = localStorage.getItem('auth_token');
   if (isStaffSessionToken(stored)) {
     return stored;
   }

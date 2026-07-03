@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Event } from '../../../types/event';
-import { Calendar, MapPin, Users, Edit, Trash2, Settings } from 'lucide-react';
+import { Calendar, MapPin, Users, Edit, Trash2, Settings, Send } from 'lucide-react';
 import { EventStatusBadge } from './EventStatusBadge';
 
 interface Props {
@@ -8,10 +8,12 @@ interface Props {
   onEdit?: (e: Event) => void;
   onDelete?: (id: string) => void;
   onView?: (e: Event) => void;
+  onPublish?: (e: Event) => void;
 }
 
-export const EventCard: React.FC<Props> = ({ event, onEdit, onDelete, onView }) => {
+export const EventCard: React.FC<Props> = ({ event, onEdit, onDelete, onView, onPublish }) => {
   const [busy, setBusy] = useState(false);
+  const isDraft = (event.status || '').toLowerCase() === 'draft';
 
   // Type-safe image fallback (fixes the `string | undefined` TS error)
   const safeImage = (): string => {
@@ -25,6 +27,16 @@ export const EventCard: React.FC<Props> = ({ event, onEdit, onDelete, onView }) 
     setBusy(true);
     try {
       await onDelete?.(event.id);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!confirm(`Publish "${event.title}"?`)) return;
+    setBusy(true);
+    try {
+      await onPublish?.(event);
     } finally {
       setBusy(false);
     }
@@ -80,7 +92,16 @@ export const EventCard: React.FC<Props> = ({ event, onEdit, onDelete, onView }) 
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {isDraft && (
+              <button
+                onClick={handlePublish}
+                disabled={busy}
+                className="w-full flex items-center justify-center gap-1.5 text-xs font-label-bold uppercase py-2.5 border-2 border-on-background bg-primary-fixed text-on-primary-fixed hover:bg-primary transition-colors press-down disabled:opacity-50"
+              >
+                <Send className="w-4 h-4 stroke-[2.5]" /> PUBLISH
+              </button>
+            )}
             <button
               onClick={() => onView?.(event)}
               className="flex-1 flex items-center justify-center gap-1.5 text-xs font-label-bold uppercase py-2.5 border-2 border-on-background bg-primary-fixed text-on-primary-fixed hover:bg-primary transition-colors press-down"

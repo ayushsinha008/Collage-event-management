@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { AnalyticsService } from '../services/analytics.service';
+import { OrganizerService } from '../services/organizer.service';
 import { AuthRequest } from '../types';
 import { sendSuccess } from '../utils/response';
 import { Event } from '../models/Event.model';
@@ -38,8 +39,13 @@ export class OrganizerController {
     const events = await Event.find({ organizer: req.user!._id, isDeleted: false }).select('_id');
     const eventIds = events.map((e) => e._id);
 
+    const query: any = { event: { $in: eventIds } };
+    if (req.query.event) {
+      query.event = req.query.event;
+    }
+
     const features = new APIFeatures(
-      Registration.find({ event: { $in: eventIds } }).populate('user', 'name email photoURL').populate('event', 'title'),
+      Registration.find(query).populate('user', 'name email photoURL').populate('event', 'title'),
       req.query
     )
       .filter()
@@ -65,23 +71,40 @@ export class OrganizerController {
   static async createAnnouncement(req: AuthRequest, res: Response) {
     const { eventId, title, message } = req.body;
 
-    const event = await Event.findOne({ _id: eventId, organizer: req.user!._id, isDeleted: false });
-    if (!event) {
-      return sendSuccess(req, res, 404, 'Event not found or unauthorized');
-    }
+    await OrganizerService.assertEventOwner(eventId, req.user!);
 
-    const announcement = await Announcement.create({ event: eventId, title, message });
+    const announcement = await Announcement.create({
+      event: eventId,
+      title,
+      message,
+      status: 'draft',
+    });
     sendSuccess(req, res, 201, 'Announcement created', announcement);
   }
 
+  static async getAnnouncements(req: AuthRequest, res: Response) {
+    const announcements = await OrganizerService.getAnnouncements(req.user!);
+    sendSuccess(req, res, 200, 'Announcements fetched', announcements);
+  }
+
+  static async sendAnnouncement(req: AuthRequest, res: Response) {
+    const announcement = await OrganizerService.sendAnnouncement(String(req.params.id), req.user!);
+    sendSuccess(req, res, 200, 'Announcement sent', announcement);
+  }
+
+  static async deleteAnnouncement(req: AuthRequest, res: Response) {
+    const result = await OrganizerService.deleteAnnouncement(String(req.params.id), req.user!);
+    sendSuccess(req, res, 200, 'Announcement deleted', result);
+  }
+
   static async getSettings(req: AuthRequest, res: Response) {
-    sendSuccess(req, res, 200, 'Settings fetched', {
-      emailNotifications: true,
-      smsNotifications: false,
-      autoApproveWaitlist: true,
-      timezone: 'UTC',
-      paymentGateway: 'stripe',
-    });
+    const settings = await OrganizerService.getOrganizerSettings(req.user!);
+    sendSuccess(req, res, 200, 'Settings fetched', settings);
+  }
+
+  static async updateSettings(req: AuthRequest, res: Response) {
+    const settings = await OrganizerService.updateOrganizerSettings(req.user!, req.body);
+    sendSuccess(req, res, 200, 'Settings updated', settings);
   }
 
   static async getProfile(req: AuthRequest, res: Response) {
@@ -94,10 +117,63 @@ export class OrganizerController {
       id: user._id,
       name: user.name,
       email: user.email,
-      organization: user.college || 'College Events',
+      organization: user.college || 'Campus Events',
       role: 'organizer',
       avatarUrl: user.photoURL,
     });
+  }
+
+  static async updateProfile(req: AuthRequest, res: Response) {
+    const profile = await OrganizerService.updateOrganizerProfile(req.user!, req.body);
+    sendSuccess(req, res, 200, 'Profile updated', profile);
+  }
+
+  static async getVolunteers(req: AuthRequest, res: Response) {
+    const volunteers = await OrganizerService.getVolunteers(String(req.params.eventId), req.user!);
+    sendSuccess(req, res, 200, 'Volunteers fetched', volunteers);
+  }
+
+  static async inviteVolunteer(req: AuthRequest, res: Response) {
+    const volunteer = await OrganizerService.inviteVolunteer(String(req.params.eventId), req.user!, req.body);
+    sendSuccess(req, res, 201, 'Volunteer invited', volunteer);
+  }
+
+  static async updateVolunteer(req: AuthRequest, res: Response) {
+    const volunteer = await OrganizerService.updateVolunteer(
+      String(req.params.eventId),
+      String(req.params.id),
+      req.user!,
+      req.body
+    );
+    sendSuccess(req, res, 200, 'Volunteer updated', volunteer);
+  }
+
+  static async removeVolunteer(req: AuthRequest, res: Response) {
+    const result = await OrganizerService.removeVolunteer(String(req.params.eventId), String(req.params.id), req.user!);
+    sendSuccess(req, res, 200, 'Volunteer removed', result);
+  }
+
+  static async getEventSettings(req: AuthRequest, res: Response) {
+    const settings = await OrganizerService.getEventSettings(String(req.params.eventId), req.user!);
+    sendSuccess(req, res, 200, 'Event settings fetched', settings);
+  }
+
+  static async updateEventSettings(req: AuthRequest, res: Response) {
+    const settings = await OrganizerService.updateEventSettings(String(req.params.eventId), req.user!, req.body);
+    sendSuccess(req, res, 200, 'Event settings updated', settings);
+  }
+
+  static async getLiveAttendance(req: AuthRequest, res: Response) {
+    const data = await OrganizerService.getLiveAttendance(String(req.params.eventId), req.user!);
+    sendSuccess(req, res, 200, 'Live attendance fetched', data);
+  }
+
+  static async exportRegistrations(req: AuthRequest, res: Response) {
+    const eventId = (req.query.eventId as string) || '';
+    const csv = await OrganizerService.exportRegistrations(eventId, req.user!);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="registrations-${eventId}.csv"`);
+    res.send(csv);
   }
 
   static async getEventAnalytics(req: AuthRequest, res: Response) {

@@ -24,7 +24,6 @@ export const DashboardPage: React.FC = () => {
   }, []);
 
   if (loading) {
-    console.log('DashboardPage render - loading:', loading, 'stats:', stats, 'organizer:', organizer);
     return (
       <div className="py-20 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-on-background border-t-primary rounded-full animate-spin"></div>

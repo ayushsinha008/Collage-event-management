@@ -13,6 +13,15 @@ import {
   OrganizerSettings,
   LiveAttendanceData,
 } from '../types/organizer';
+import {
+  mapOrganizerEvent,
+  mapRegistration,
+  mapAnnouncement,
+  mapVolunteer,
+  adaptDashboardStats,
+} from '../utils/organizerMappers';
+
+const mapEventResponse = (e: any): Event => mapOrganizerEvent(e);
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -174,34 +183,88 @@ const mockLiveAttendance: LiveAttendanceData = {
 export const organizerApi = {
   // Profile
   getProfile: () =>
-    withMockFallback(() => API.get<Organizer>('/users/profile').then((r) => r.data), mockProfile),
+    withMockFallback<Organizer>(
+      () =>
+        API.get<any>('/users/profile').then((r) => ({
+          id: r.data._id || r.data.id,
+          name: r.data.name,
+          email: r.data.email,
+          organization: r.data.college || r.data.organization || 'Campus Events',
+          role: 'organizer',
+          avatarUrl: r.data.photoURL,
+        })),
+      mockProfile
+    ),
   updateProfile: (data: Partial<Organizer>) =>
-    withMockFallback(() => API.patch<Organizer>('/users/profile', data).then((r) => r.data), { ...mockProfile, ...data }),
+    withMockFallback<Organizer>(
+      () =>
+        API.patch<any>('/users/profile', {
+          name: data.name,
+          college: data.organization,
+        }).then((r) => ({
+          id: r.data._id || r.data.id,
+          name: r.data.name,
+          email: r.data.email,
+          organization: r.data.college || data.organization || 'Campus Events',
+          role: 'organizer',
+          avatarUrl: r.data.photoURL,
+        })),
+      { ...mockProfile, ...data }
+    ),
 
   // Dashboard
   getDashboardStats: () =>
-    withMockFallback(() => API.get<DashboardStats>('/organizer/dashboard').then((r) => r.data), mockStats),
+    withMockFallback(
+      () => API.get<any>('/organizer/dashboard').then((r) => adaptDashboardStats(r.data)),
+      mockStats
+    ),
   getLiveAttendance: (eventId: string) =>
     withMockFallback(() => API.get<LiveAttendanceData>(`/organizer/events/${eventId}/live-attendance`).then((r) => r.data), mockLiveAttendance),
 
   // Events
-  getMyEvents: (params?: { status?: string; category?: string; search?: string }) =>
-    withMockFallback(() => API.get<Event[]>('/organizer/events', { params }).then((r) => r.data.map((e: any) => ({ ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl, registrationsCount: e.registrationCount ?? e.registrationsCount ?? 0, rsvps: e.registrationCount ?? e.registrationsCount ?? 0 }))),
-      mockEvents.filter((e) =>
-        (!params?.status || params.status === 'all' || e.status === params.status) &&
-        (!params?.category || params.category === 'all' || String(e.category).toLowerCase() === String(params.category).toLowerCase()) &&
-        (!params?.search || e.title.toLowerCase().includes(params.search.toLowerCase()))
+  getMyEvents: (params?: { status?: string; category?: string; search?: string }) => {
+    const apiParams: Record<string, string> = {};
+    if (params?.search) apiParams.search = params.search;
+    if (params?.status && params.status !== 'all') apiParams.status = params.status;
+    if (params?.category && params.category !== 'all') apiParams.category = params.category;
+
+    return withMockFallback(
+      () =>
+        API.get<any[]>('/organizer/events', { params: apiParams }).then((r) =>
+          (Array.isArray(r.data) ? r.data : []).map(mapEventResponse)
+        ),
+      mockEvents.filter(
+        (e) =>
+          (!params?.status || params.status === 'all' || e.status === params.status) &&
+          (!params?.category ||
+            params.category === 'all' ||
+            String(e.category).toLowerCase() === String(params.category).toLowerCase()) &&
+          (!params?.search || e.title.toLowerCase().includes(params.search.toLowerCase()))
       )
-    ),
+    );
+  },
   createEvent: (data: any) => {
     const payload: any = { ...data };
     if (data.imageUrl) payload.bannerImage = data.imageUrl;
-    return withMockFallback(() => API.post<Event>('/events', payload).then((r) => { const e: any = r.data; return { ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl, registrationsCount: e.registrationCount ?? e.registrationsCount ?? 0, rsvps: e.registrationCount ?? e.registrationsCount ?? 0 }; }),
+    if (data.location) payload.venue = data.location;
+    if (data.time) {
+      payload.startTime = data.time;
+      payload.endTime = data.endTime || data.time;
+    }
+    if (data.date && !String(data.date).includes('T')) {
+      payload.date = new Date(data.date).toISOString();
+    }
+    if (!payload.status) payload.status = 'Draft';
+    return withMockFallback(
+      () => API.post<any>('/events', payload).then((r) => mapEventResponse(r.data)),
       { ...data, id: 'evt-' + Date.now(), status: 'draft', registrations: 0, capacity: data.capacity || 100 } as Event
     );
   },
   getEvent: (id: string) =>
-    withMockFallback(() => API.get<Event>(`/events/${id}`).then((r) => { const e: any = r.data; return { ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl, registrationsCount: e.registrationCount ?? e.registrationsCount ?? 0, rsvps: e.registrationCount ?? e.registrationsCount ?? 0 }; }), mockEvents.find((e) => e.id === id) as Event),
+    withMockFallback(
+      () => API.get<any>(`/events/${id}`).then((r) => mapEventResponse(r.data)),
+      mockEvents.find((e) => e.id === id) as Event
+    ),
   updateEvent: (id: string, data: Partial<Event>) => {
     const payload: any = { ...data };
     if (data.location) payload.venue = data.location;
@@ -213,34 +276,29 @@ export const organizerApi = {
       payload.date = new Date(data.date).toISOString();
     }
     if (data.imageUrl) payload.bannerImage = data.imageUrl;
-    return withMockFallback(() => API.patch<Event>(`/events/${id}`, payload).then((r) => r.data),
+    return withMockFallback(
+      () => API.patch<any>(`/events/${id}`, payload).then((r) => mapEventResponse(r.data)),
       { ...(mockEvents.find((e) => e.id === id) as Event), ...data }
     );
   },
   deleteEvent: (id: string) =>
     withMockFallback(() => API.delete(`/events/${id}`).then((r) => r.data), { success: true }),
   publishEvent: (id: string) =>
-    withMockFallback(() => API.patch<Event>(`/events/${id}`, { status: 'published' }).then((r) => r.data), mockEvents.find((e) => e.id === id) ?? mockEvents[0]),
+    withMockFallback(
+      () => API.patch<any>(`/events/${id}`, { status: 'Upcoming' }).then((r) => mapEventResponse(r.data)),
+      mockEvents.find((e) => e.id === id) ?? mockEvents[0]
+    ),
 
   // Registrations
   getRegistrations: (params: { eventId?: string; search?: string; status?: string }) =>
     withMockFallback(async () => {
-      const r = await API.get('/organizer/registrations', { params });
+      const apiParams: Record<string, string> = {};
+      if (params.eventId) apiParams.event = params.eventId;
+      if (params.search) apiParams.search = params.search;
+      if (params.status && params.status !== 'all') apiParams.status = params.status;
+      const r = await API.get('/organizer/registrations', { params: apiParams });
       const items = Array.isArray(r.data) ? r.data : [];
-      return items.map((reg: any) => ({
-        id: reg._id,
-        eventId: reg.event?._id || reg.event,
-        eventTitle: reg.event?.title || 'Unknown Event',
-        attendeeName: reg.user?.name || 'Unknown',
-        attendeeEmail: reg.user?.email || 'Unknown',
-        attendeeAvatarUrl: reg.user?.photoURL || '',
-        ticketCode: reg.ticket?.ticketCode || 'N/A',
-        registeredAt: reg.createdAt,
-        checkedIn: reg.ticket?.status === 'used' || reg.status === 'checked-in',
-        checkedInAt: reg.ticket?.usedAt || reg.updatedAt,
-        status: reg.status,
-        paymentStatus: 'free' as const,
-      }));
+      return items.map(mapRegistration);
     },
       mockRegistrations.filter((r) =>
         (!params.eventId || r.eventId === params.eventId) &&
@@ -258,8 +316,21 @@ export const organizerApi = {
       )
     ),
   checkInAttendee: (ticketCode: string) =>
-    withMockFallback(() => API.post<Registration>('/organizer/registrations/check-in', { ticketCode }).then((r) => r.data),
-      { id: 'reg-checked-' + Date.now(), eventId: '1', eventTitle: 'NEON PULSE', attendeeName: 'Alex Kumar', attendeeEmail: 'alex@college.edu', ticketCode, registeredAt: new Date(Date.now() - 86400000).toISOString(), checkedIn: true, checkedInAt: new Date().toISOString(), status: 'confirmed', paymentStatus: 'free' } as Registration
+    withMockFallback(
+      () => API.post('/check-in', { qrToken: ticketCode }).then((r) => r.data),
+      {
+        id: 'reg-checked-' + Date.now(),
+        eventId: '1',
+        eventTitle: 'Event',
+        attendeeName: 'Attendee',
+        attendeeEmail: '',
+        ticketCode,
+        registeredAt: new Date().toISOString(),
+        checkedIn: true,
+        checkedInAt: new Date().toISOString(),
+        status: 'confirmed',
+        paymentStatus: 'free',
+      } as Registration
     ),
   importRegistrations: (eventId: string, rows: { attendeeName: string; attendeeEmail: string }[]) =>
     withMockFallback(
@@ -289,9 +360,18 @@ export const organizerApi = {
 
   // Announcements
   getAnnouncements: () =>
-    withMockFallback(() => API.get<Announcement[]>('/organizer/announcements').then((r) => r.data), mockAnnouncements),
+    withMockFallback(
+      () => API.get<any[]>('/organizer/announcements').then((r) => (Array.isArray(r.data) ? r.data : []).map(mapAnnouncement)),
+      mockAnnouncements
+    ),
   createAnnouncement: (data: Omit<Announcement, 'id' | 'createdAt' | 'sentAt' | 'status'>) =>
-    withMockFallback(() => API.post<Announcement>('/organizer/announcements', data).then((r) => r.data),
+    withMockFallback(
+      () =>
+        API.post<any>('/organizer/announcements', {
+          eventId: data.eventId,
+          title: data.title,
+          message: data.message,
+        }).then(mapAnnouncement),
       { ...data, id: 'a-' + Date.now(), status: 'draft', createdAt: new Date().toISOString() } as Announcement
     ),
   sendAnnouncement: (id: string) =>
@@ -303,19 +383,23 @@ export const organizerApi = {
 
   // Volunteers
   getEventRegistrations: (eventId: string, params?: any) =>
-    withMockFallback(() => API.get<Registration[]>(`/organizer/registrations`, { params: { ...params, event: eventId } }).then((r) => r.data),
+    withMockFallback(
+      () => organizerApi.getRegistrations({ ...params, eventId }),
       mockRegistrations.filter((r) => r.eventId === eventId)
     ),
   getVolunteers: (eventId: string) =>
-    withMockFallback(() => API.get<Volunteer[]>(`/organizer/events/${eventId}/volunteers`).then((r) => r.data),
+    withMockFallback(
+      () => API.get<any[]>(`/organizer/events/${eventId}/volunteers`).then((r) => (Array.isArray(r.data) ? r.data : []).map(mapVolunteer)),
       mockVolunteers.filter((v) => v.eventId === eventId)
     ),
   inviteVolunteer: (eventId: string, data: Omit<Volunteer, 'id' | 'eventId' | 'assignedAt' | 'status'>) =>
-    withMockFallback(() => API.post<Volunteer>(`/organizer/events/${eventId}/volunteers`, data).then((r) => r.data),
+    withMockFallback(
+      () => API.post<any>(`/organizer/events/${eventId}/volunteers`, data).then(mapVolunteer),
       { ...data, id: 'v-' + Date.now(), eventId, status: 'invited', assignedAt: new Date().toISOString() } as Volunteer
     ),
   updateVolunteer: (eventId: string, id: string, data: Partial<Volunteer>) =>
-    withMockFallback(() => API.put<Volunteer>(`/organizer/events/${eventId}/volunteers/${id}`, data).then((r) => r.data),
+    withMockFallback(
+      () => API.put<any>(`/organizer/events/${eventId}/volunteers/${id}`, data).then(mapVolunteer),
       { ...(mockVolunteers.find((v) => v.id === id) ?? mockVolunteers[0]), ...data } as Volunteer
     ),
   removeVolunteer: (eventId: string, id: string) =>
@@ -323,9 +407,13 @@ export const organizerApi = {
 
   // Event settings (per-event)
   getEventSettings: (eventId: string) =>
-    withMockFallback(() => API.get<EventSettings>(`/organizer/events/${eventId}/settings`).then((r) => r.data), mockEventSettings),
+    withMockFallback(
+      () => API.get<EventSettings>(`/organizer/events/${eventId}/settings`).then((r) => r.data),
+      { ...mockEventSettings, eventId }
+    ),
   updateEventSettings: (eventId: string, data: Partial<EventSettings>) =>
-    withMockFallback(() => API.put<EventSettings>(`/organizer/events/${eventId}/settings`, data).then((r) => r.data),
+    withMockFallback(
+      () => API.put<EventSettings>(`/organizer/events/${eventId}/settings`, data).then((r) => r.data),
       { ...mockEventSettings, ...data, eventId } as EventSettings
     ),
 
@@ -333,7 +421,8 @@ export const organizerApi = {
   getOrganizerSettings: () =>
     withMockFallback(() => API.get<OrganizerSettings>('/organizer/settings').then((r) => r.data), mockOrganizerSettings),
   updateOrganizerSettings: (data: Partial<OrganizerSettings>) =>
-    withMockFallback(() => API.put<OrganizerSettings>('/organizer/settings', data).then((r) => r.data),
+    withMockFallback(
+      () => API.put<OrganizerSettings>('/organizer/settings', data).then((r) => r.data),
       { ...mockOrganizerSettings, ...data } as OrganizerSettings
     ),
 };

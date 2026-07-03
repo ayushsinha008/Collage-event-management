@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { auth, googleProvider } from '../services/firebase';
-import { signInWithPopup, signInWithCustomToken, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { studentApi } from '../services/studentApi';
 import { mapBackendRole } from '../utils/authToken';
 
@@ -141,18 +141,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return loggedInUser;
   };
 
-  const completeStaffSession = async (profile: any, role: 'organizer' | 'volunteer', token: string) => {
+  const completeStaffSession = async (profile: any, role: 'organizer' | 'volunteer') => {
     try {
       await signOut(auth);
     } catch {
       // ignore if no firebase session
     }
 
+    const staffToken = `festflow-staff-${role}`;
     const loggedInUser = profile?.uid
       ? buildUserFromProfile(profile, profile.uid)
       : buildLocalStaffUser(role);
 
-    localStorage.setItem('auth_token', token);
+    localStorage.setItem('auth_token', staffToken);
     localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
     setUser(loggedInUser);
     return loggedInUser;
@@ -163,18 +164,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     role: 'organizer' | 'volunteer'
   ): Promise<User> => {
     try {
-      const { customToken, user: profile } = await studentApi.staffLogin(passcode, role);
-
-      if (customToken.startsWith('festflow-staff-')) {
-        return await completeStaffSession(profile, role, customToken);
-      }
-
-      const credential = await signInWithCustomToken(auth, customToken);
-      const token = await credential.user.getIdToken();
-      return await completeStaffSession(profile, role, token);
+      const { user: profile } = await studentApi.staffLogin(passcode, role);
+      return await completeStaffSession(profile, role);
     } catch (err) {
       console.warn('Staff login via API failed, using local session.', err);
-      return await completeStaffSession(null, role, `festflow-staff-${role}`);
+      return await completeStaffSession(null, role);
     }
   };
 

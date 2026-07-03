@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { getAuth } from 'firebase-admin/auth';
 import '../config/firebase.config';
 import { User } from '../models/User.model';
 import { AuthRequest, Role } from '../types';
@@ -57,12 +56,7 @@ export class AuthController {
       await user.save();
     }
 
-    let customToken: string;
-    try {
-      customToken = await getAuth().createCustomToken(account.uid);
-    } catch {
-      customToken = `festflow-staff-${role}`;
-    }
+    const customToken = `festflow-staff-${role}`;
 
     sendSuccess(req as AuthRequest, res, 200, 'Staff login successful', {
       customToken,

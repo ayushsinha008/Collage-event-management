@@ -37,7 +37,7 @@ const eventFromForm = (form: HTMLFormElement): Omit<Event, 'id'> => {
 export const MyEventsPage: React.FC = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { events, loading, error, filters, setFilters, create, update, remove } = useOrganizerEvents();
+  const { events, loading, error, filters, setFilters, create, update, remove, publish } = useOrganizerEvents();
   const [editing, setEditing] = useState<Event | null>(null);
   const [showCreate, setShowCreate] = useState(params.get('create') === 'true');
 
@@ -113,6 +113,7 @@ export const MyEventsPage: React.FC = () => {
               onEdit={(ev) => setEditing(ev)}
               onView={(ev) => navigate(`/organizer/events/${ev.id}`)}
               onDelete={(id) => remove(id)}
+              onPublish={(ev) => publish(ev.id)}
             />
           ))}
         </div>

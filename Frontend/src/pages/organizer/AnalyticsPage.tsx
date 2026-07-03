@@ -12,9 +12,21 @@ export const AnalyticsPage: React.FC = () => {
   const [range, setRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const { data, loading } = useAnalytics(range);
   const [live, setLive] = useState<LiveAttendanceData | null>(null);
+  const [liveEventTitle, setLiveEventTitle] = useState('');
 
   useEffect(() => {
-    (async () => setLive(await organizerApi.getLiveAttendance('1')))();
+    (async () => {
+      try {
+        const events = await organizerApi.getMyEvents();
+        const top = events.sort((a, b) => (b.registrationsCount ?? 0) - (a.registrationsCount ?? 0))[0];
+        if (!top?.id) return;
+        const attendance = await organizerApi.getLiveAttendance(top.id);
+        setLive(attendance);
+        setLiveEventTitle(top.title);
+      } catch {
+        setLive(null);
+      }
+    })();
   }, []);
 
   if (loading || !data) {
@@ -48,7 +60,7 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       {/* LIVE ATTENDANCE — signature screen */}
-      {live && <LiveAttendanceChart data={live} eventTitle="NEON PULSE — Real-time Floor" />}
+      {live && <LiveAttendanceChart data={live} eventTitle={liveEventTitle || 'Top Event'} />}
 
       <MetricSummary
         metrics={[

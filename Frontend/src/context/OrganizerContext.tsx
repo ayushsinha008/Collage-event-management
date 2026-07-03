@@ -21,13 +21,27 @@ export const OrganizerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [loading, setLoading] = useState(true);
 
   const refreshProfile = async () => {
+    if (!user || mapBackendRole(user.role) !== 'organizer') {
+      setOrganizer(null);
+      setLoading(false);
+      return;
+    }
+
+    // Keep dashboard usable immediately after /login staff auth
+    setOrganizer({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      organization: 'Campus Events',
+      role: 'organizer',
+      avatarUrl: user.photoURL,
+    });
+
     try {
       const data = await organizerApi.getProfile();
       setOrganizer(data);
     } catch {
-      if (!user || mapBackendRole(user.role) !== 'organizer') {
-        setOrganizer(null);
-      }
+      // Auth session is valid — keep user-derived organizer profile
     } finally {
       setLoading(false);
     }
@@ -35,14 +49,7 @@ export const OrganizerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   useEffect(() => {
     if (user && mapBackendRole(user.role) === 'organizer') {
-      setOrganizer({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        organization: 'Campus Events',
-        role: 'organizer',
-        avatarUrl: user.photoURL,
-      });
+      setLoading(true);
       refreshProfile();
     } else {
       setOrganizer(null);

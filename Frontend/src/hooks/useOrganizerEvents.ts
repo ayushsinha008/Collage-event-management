@@ -59,5 +59,13 @@ export const useOrganizerEvents = (initialFilters: EventFilters = {}) => {
     [fetch]
   );
 
-  return { events, loading, error, filters, setFilters, refetch: fetch, create, update, remove };
+  const publish = useCallback(
+    async (id: string) => {
+      await organizerApi.publishEvent(id);
+      await fetch();
+    },
+    [fetch]
+  );
+
+  return { events, loading, error, filters, setFilters, refetch: fetch, create, update, remove, publish };
 };
