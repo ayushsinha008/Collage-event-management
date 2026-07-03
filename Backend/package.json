@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "node ../node_modules/typescript/bin/tsc",
     "start": "node dist/server.js",
     "dev": "nodemon --watch src --ext ts --exec tsx src/server.ts",
     "seed": "tsx src/utils/seed.ts",
@@ -42,7 +42,7 @@
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
+    "@types/express": "^4.17.21",
     "@types/hpp": "^0.2.7",
     "@types/jest": "^30.0.0",
     "@types/json2csv": "^5.0.7",

@@ -428,4 +428,12 @@ export const organizerApi = {
       () => API.put<OrganizerSettings>('/organizer/settings', data).then((r) => r.data),
       { ...mockOrganizerSettings, ...data } as OrganizerSettings
     ),
+
+  // Notifications
+  getNotifications: () =>
+    API.get<any[]>('/organizer/notifications').then((r) => r.data),
+  readAllNotifications: () =>
+    API.put<any>('/organizer/notifications/read-all').then((r) => r.data),
+  readNotification: (id: string) =>
+    API.put<any>(`/organizer/notifications/${id}/read`).then((r) => r.data),
 };

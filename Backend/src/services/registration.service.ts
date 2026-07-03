@@ -7,6 +7,7 @@ import { AuthUser, RegistrationStatus, TicketStatus, Role } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { generateQRCode } from './qr.service';
 import { APIFeatures } from '../utils/apiFeatures';
+import { OrganizerService } from './organizer.service';
 
 export class RegistrationService {
   static async registerForEvent(eventId: string, user: AuthUser) {
@@ -96,6 +97,18 @@ export class RegistrationService {
 
       await session.commitTransaction();
       session.endSession();
+
+      // Create Notification for the organizer
+      try {
+        await OrganizerService.createNotification(
+          event.organizer.toString(),
+          'New Registration',
+          `Student "${user.email}" has registered for event "${event.title}".`,
+          'REGISTRATION'
+        );
+      } catch (err) {
+        console.error('Failed to create registration notification:', err);
+      }
 
       return { registration, ticket, qrCode: qrCodeDataUri };
     } catch (error) {

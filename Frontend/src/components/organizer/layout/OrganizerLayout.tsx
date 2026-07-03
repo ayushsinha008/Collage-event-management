@@ -7,7 +7,6 @@ const bottomNav = [
   { to: 'dashboard',     icon: 'space_dashboard', label: 'Home' },
   { to: 'events',        icon: 'event',           label: 'Events' },
   { to: 'registrations', icon: 'groups',          label: 'Guests' },
-  { to: 'volunteers',    icon: 'volunteer_activism', label: 'Volunteers' },
   { to: 'analytics',     icon: 'analytics',       label: 'Stats' },
   { to: 'profile',       icon: 'person',          label: 'Profile' },
 ];

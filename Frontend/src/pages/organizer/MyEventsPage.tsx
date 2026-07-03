@@ -31,6 +31,7 @@ const eventFromForm = (form: HTMLFormElement): Omit<Event, 'id'> => {
     capacity:    Number(fd.get('capacity') ?? 100),
     category:    (fd.get('category') as Event['category']) ?? 'technical',
     imageUrl:    String(fd.get('imageUrl') ?? ''),
+    status:      'Upcoming' as any, // backend accepts status values and UI maps published/Upcoming
   };
 };
 

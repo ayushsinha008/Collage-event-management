@@ -6,7 +6,7 @@ export const QuickActions: React.FC = () => {
   const navigate = useNavigate();
 
   const actions = [
-    { label: 'Create Event', icon: Plus, onClick: () => navigate('/organizer/events?create=true'), color: 'bg-tertiary-fixed text-on-tertiary-fixed' },
+    { label: 'Create Event', icon: Plus, onClick: () => navigate('/organizer/events/new'), color: 'bg-tertiary-fixed text-on-tertiary-fixed' },
     { label: 'Bulk Import', icon: Upload, onClick: () => navigate('/organizer/registrations?import=true'), color: 'bg-primary-fixed text-on-primary-fixed' },
     { label: 'Announcement', icon: Send, onClick: () => navigate('/organizer/announcements?new=true'), color: 'bg-secondary-fixed text-on-secondary-fixed' },
     { label: 'Analytics', icon: BarChart3, onClick: () => navigate('/organizer/analytics'), color: 'bg-secondary-container text-on-secondary-container' },

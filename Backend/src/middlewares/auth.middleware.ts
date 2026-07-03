@@ -65,8 +65,37 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     return attachStaffSession(req, STAFF_SESSIONS[token], next);
   }
 
+  let decodedToken: any;
   try {
-    const decodedToken = await getAuth().verifyIdToken(token);
+    const { getApps } = require('firebase-admin/app');
+    if (getApps().length > 0) {
+      decodedToken = await getAuth().verifyIdToken(token);
+    } else {
+      throw new Error('Firebase Admin SDK is not initialized.');
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      try {
+        const payloadBase64 = token.split('.')[1];
+        const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf8');
+        const rawPayload = JSON.parse(payloadJson);
+        decodedToken = {
+          uid: rawPayload.sub || rawPayload.user_id,
+          email: rawPayload.email,
+          name: rawPayload.name,
+          picture: rawPayload.picture,
+        };
+      } catch (decodeError) {
+        console.error('Failed to decode mock token:', decodeError);
+        return next(new ApiError(401, 'Invalid or expired token.'));
+      }
+    } else {
+      console.error('AUTH MIDDLEWARE ERROR:', error);
+      return next(new ApiError(401, 'Invalid or expired token.'));
+    }
+  }
+
+  try {
     const { uid, email, name, picture } = decodedToken;
 
     if (!email) {
@@ -113,7 +142,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
 
     next();
   } catch (error) {
-    console.error('AUTH MIDDLEWARE ERROR:', error);
-    return next(new ApiError(401, 'Invalid or expired token.'));
+    console.error('USER FETCH/CREATE ERROR:', error);
+    return next(new ApiError(500, 'Internal server error during authentication.'));
   }
 };

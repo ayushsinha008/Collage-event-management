@@ -216,4 +216,19 @@ export class OrganizerController {
       ],
     });
   }
+
+  static async getNotifications(req: AuthRequest, res: Response) {
+    const notifications = await OrganizerService.getNotifications(req.user!);
+    sendSuccess(req, res, 200, 'Notifications fetched', notifications);
+  }
+
+  static async readAllNotifications(req: AuthRequest, res: Response) {
+    const result = await OrganizerService.readAllNotifications(req.user!);
+    sendSuccess(req, res, 200, 'All notifications marked as read', result);
+  }
+
+  static async readNotification(req: AuthRequest, res: Response) {
+    const notification = await OrganizerService.readNotification(String(req.params.id), req.user!);
+    sendSuccess(req, res, 200, 'Notification marked as read', notification);
+  }
 }

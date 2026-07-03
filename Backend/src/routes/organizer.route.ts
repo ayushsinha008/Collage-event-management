@@ -24,6 +24,10 @@ router.delete('/announcements/:id', OrganizerController.deleteAnnouncement);
 router.get('/settings', OrganizerController.getSettings);
 router.put('/settings', OrganizerController.updateSettings);
 
+router.get('/notifications', OrganizerController.getNotifications);
+router.put('/notifications/read-all', OrganizerController.readAllNotifications);
+router.put('/notifications/:id/read', OrganizerController.readNotification);
+
 router.get('/profile', OrganizerController.getProfile);
 router.put('/profile', OrganizerController.updateProfile);
 
