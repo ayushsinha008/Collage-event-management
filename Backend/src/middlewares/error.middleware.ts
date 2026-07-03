@@ -56,7 +56,11 @@ export const errorMiddleware = (
     console.error(`[TEST ERROR] ${message}`, err.stack);
   }
 
-  require('fs').appendFileSync('backend_errors.log', JSON.stringify({ message, statusCode, stack: err.stack, query: req.query }) + '\\n');
+  try {
+    require('fs').appendFileSync('backend_errors.log', JSON.stringify({ message, statusCode, stack: err.stack, query: req.query }) + '\n');
+  } catch (fsErr) {
+    // Ignore read-only filesystem error in serverless env
+  }
 
   sendError(req, res, statusCode, message, errors.length > 0 ? errors : undefined);
 };
