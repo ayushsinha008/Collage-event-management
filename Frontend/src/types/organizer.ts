@@ -17,6 +17,7 @@ export interface Registration {
   eventTitle: string;
   attendeeName: string;
   attendeeEmail: string;
+  attendeeAvatarUrl?: string;
   ticketCode: string;
   registeredAt: string;
   checkedIn: boolean;

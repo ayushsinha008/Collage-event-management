@@ -19,8 +19,12 @@ export const RegistrationRow: React.FC<Props> = ({ reg, onCheckIn, isLast }) => 
     <tr className={`bg-background hover:bg-surface-variant transition-colors group ${!isLast ? 'border-b-4 border-on-background' : ''}`}>
       <td className="px-6 py-4 border-r-4 border-on-background">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-tertiary-fixed border-4 border-on-background flex items-center justify-center font-extrabold text-xl shadow-[2px_2px_0_0_#000]">
-            {reg.attendeeName.charAt(0).toUpperCase()}
+          <div className="w-10 h-10 bg-tertiary-fixed border-4 border-on-background flex items-center justify-center font-extrabold text-xl shadow-[2px_2px_0_0_#000] overflow-hidden">
+            {reg.attendeeAvatarUrl ? (
+              <img src={reg.attendeeAvatarUrl} alt={reg.attendeeName} className="w-full h-full object-cover" />
+            ) : (
+              reg.attendeeName.charAt(0).toUpperCase()
+            )}
           </div>
           <div>
             <p className="font-extrabold text-sm uppercase tracking-wide group-hover:text-primary transition-colors">{reg.attendeeName}</p>
@@ -31,7 +35,7 @@ export const RegistrationRow: React.FC<Props> = ({ reg, onCheckIn, isLast }) => 
         </div>
       </td>
       <td className="px-6 py-4 border-r-4 border-on-background">
-        <span className="font-mono text-sm font-extrabold bg-surface px-2 py-1 border-2 border-on-background">{reg.ticketCode}</span>
+        <span className="font-mono text-xs font-extrabold bg-surface px-2 py-1 border-2 border-on-background whitespace-nowrap">{reg.ticketCode}</span>
       </td>
       <td className="px-6 py-4 border-r-4 border-on-background font-label-bold text-sm">
         {new Date(reg.registeredAt).toLocaleDateString()}

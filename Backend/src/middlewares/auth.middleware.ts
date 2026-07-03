@@ -39,7 +39,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     // 2. Find user in MongoDB
     let user = await User.findOne({ uid });
 
-    // 3. Auto-create if not exists
+    // 3. Auto-create or sync if exists
     if (!user) {
       user = await User.create({
         uid,
@@ -47,6 +47,19 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
         name: name || 'User',
         photoURL: picture || '',
       });
+    } else {
+      let updated = false;
+      if (picture && user.photoURL !== picture) {
+        user.photoURL = picture;
+        updated = true;
+      }
+      if (name && user.name !== name) {
+        user.name = name;
+        updated = true;
+      }
+      if (updated) {
+        await user.save();
+      }
     }
 
     // 4. Inject into request

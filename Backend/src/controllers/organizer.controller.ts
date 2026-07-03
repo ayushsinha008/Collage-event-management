@@ -33,7 +33,7 @@ export class OrganizerController {
 
     // Fetch registrations first
     const features = new APIFeatures(
-      Registration.find({ event: { $in: eventIds } }).populate('user', 'name email').populate('event', 'title'),
+      Registration.find({ event: { $in: eventIds } }).populate('user', 'name email photoURL').populate('event', 'title'),
       req.query
     )
       .filter()

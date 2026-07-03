@@ -224,14 +224,14 @@ export const organizerApi = {
   getRegistrations: (params: { eventId?: string; search?: string; status?: string }) =>
     withMockFallback(async () => {
       const r = await API.get('/organizer/registrations', { params });
-      // The interceptor already unwraps response.data.data into response.data
-      const items = Array.isArray(r.data) ? r.data : (r.data?.data || []);
+      const items = Array.isArray(r.data) ? r.data : [];
       return items.map((reg: any) => ({
         id: reg._id,
         eventId: reg.event?._id || reg.event,
         eventTitle: reg.event?.title || 'Unknown Event',
         attendeeName: reg.user?.name || 'Unknown',
         attendeeEmail: reg.user?.email || 'Unknown',
+        attendeeAvatarUrl: reg.user?.photoURL || '',
         ticketCode: reg.ticket?.ticketCode || 'N/A',
         registeredAt: reg.createdAt,
         checkedIn: reg.ticket?.status === 'used' || reg.status === 'checked-in',
