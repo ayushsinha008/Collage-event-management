@@ -38,9 +38,8 @@ export const AnalyticsPage: React.FC = () => {
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`px-4 py-2 font-label-bold text-sm uppercase transition-all ${i !== 0 ? 'border-l-4 border-on-background' : ''} ${
-                range === r ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-transparent text-on-surface hover:bg-surface-variant'
-              }`}
+              className={`px-4 py-2 font-label-bold text-sm uppercase transition-all ${i !== 0 ? 'border-l-4 border-on-background' : ''} ${range === r ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-transparent text-on-surface hover:bg-surface-variant'
+                }`}
             >
               {r}
             </button>

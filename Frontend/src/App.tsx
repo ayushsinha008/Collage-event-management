@@ -107,7 +107,7 @@ function App() {
         throw new Error('Connection failed');
       }
       const data = await response.json();
-      
+
       const mapBackendEvent = (e: any): Event => ({
         id: e._id || e.id,
         title: e.title,
@@ -159,7 +159,7 @@ function App() {
         const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
         const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
         if (!token) return;
-        
+
         const response = await fetch(`${baseURL}/users/me/tickets`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -171,7 +171,7 @@ function App() {
           // Set event IDs for dashboard UI
           setMyTickets(tickets.map((t: any) => t.registration?.event?._id || t.registration?.event?.id || t.registration?.event));
         }
-      } catch(err) {
+      } catch (err) {
         console.error('Failed to fetch user tickets:', err);
       }
     };
@@ -197,14 +197,14 @@ function App() {
 
     const isRegistered = myTickets.includes(event.id);
     const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
-    
+
     // AuthContext stores the token in localStorage as 'token' typically, or we can get it from the user provider.
     // If the AuthContext provides user.token or similar, use it. Otherwise, look for it.
     const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-    
+
     if (!token) {
-       alert("Error: Token not found. Please log out and log in again.");
-       return;
+      alert("Error: Token not found. Please log out and log in again.");
+      return;
     }
 
     try {
@@ -214,16 +214,16 @@ function App() {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         setMyTickets(prev => prev.filter(id => id !== event.id));
-        setEvents(prev => prev.map(e => e.id === event.id ? { ...e, rsvps: (e.rsvps||0) - 1 } : e));
+        setEvents(prev => prev.map(e => e.id === event.id ? { ...e, rsvps: (e.rsvps || 0) - 1 } : e));
       } else {
         // Register
         const response = await fetch(`${baseURL}/events/${event.id}/register`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           // The backend returns the QR code and ticket details
@@ -231,19 +231,19 @@ function App() {
           if (data.data && data.data.ticket) {
             setMyTicketDetails(prev => [...prev, { ...data.data.ticket, registration: { event: event }, qrCodeDataUri: data.data.qrCode }]);
           }
-          setEvents(prev => prev.map(e => e.id === event.id ? { ...e, rsvps: (e.rsvps||0) + 1 } : e));
-          
+          setEvents(prev => prev.map(e => e.id === event.id ? { ...e, rsvps: (e.rsvps || 0) + 1 } : e));
+
           if (data.data && data.data.qrCode) {
-             alert(`Ticket Booked Successfully! Your Ticket Code is: ${data.data.ticket?.ticketCode}`);
-             setSelectedEvent(null);
-             setCurrentTab('events');
+            alert(`Ticket Booked Successfully! Your Ticket Code is: ${data.data.ticket?.ticketCode}`);
+            setSelectedEvent(null);
+            setCurrentTab('events');
           }
         } else {
-           const errData = await response.json();
-           alert(`Failed: ${errData.message || 'Could not register'}`);
+          const errData = await response.json();
+          alert(`Failed: ${errData.message || 'Could not register'}`);
         }
       }
-    } catch(err) {
+    } catch (err) {
       console.error('Backend RSVP update failed:', err);
       alert('Action failed. Please try again later.');
     }
@@ -319,12 +319,12 @@ function App() {
           ) : (
 
             /* --- My Tickets View --- */
-            <TicketWallet 
-              events={events} 
-              myTickets={myTickets} 
+            <TicketWallet
+              events={events}
+              myTickets={myTickets}
               ticketDetails={myTicketDetails}
-              handleRegister={handleRegister} 
-              setCurrentTab={setCurrentTab} 
+              handleRegister={handleRegister}
+              setCurrentTab={setCurrentTab}
             />
           )}
         </div>

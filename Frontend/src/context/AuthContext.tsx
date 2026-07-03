@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (parsed.id === firebaseUser.uid && parsed.photoURL) {
               customPhotoURL = parsed.photoURL;
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         const loggedInUser: User = {
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setLoading(false);
               return; // Do not clear organizer or volunteer session
             }
-          } catch (e) {}
+          } catch (e) { }
         }
         setUser(null);
       }
@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async (): Promise<User> => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      
+
       let customPhotoURL = result.user.photoURL || undefined;
       try {
         const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';

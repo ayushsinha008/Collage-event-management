@@ -56,10 +56,10 @@ const mockProfile: Organizer = {
 const mockStats: DashboardStats = {
   totalEvents: 12, activeEvents: 3, totalRegistrations: 450, thisWeekRegistrations: 85,
   recentActivity: [
-    { id: '1', type: 'registration',  message: 'Alex registered for NEON PULSE', timestamp: new Date().toISOString(), eventId: '1' },
-    { id: '2', type: 'check-in',      message: 'Sarah checked in at NEON PULSE', timestamp: new Date(Date.now() - 3600000).toISOString(), eventId: '1' },
+    { id: '1', type: 'registration', message: 'Alex registered for NEON PULSE', timestamp: new Date().toISOString(), eventId: '1' },
+    { id: '2', type: 'check-in', message: 'Sarah checked in at NEON PULSE', timestamp: new Date(Date.now() - 3600000).toISOString(), eventId: '1' },
     { id: '3', type: 'event-created', message: 'New workshop "Brutalist UI Lab" created', timestamp: new Date(Date.now() - 7200000).toISOString() },
-    { id: '4', type: 'announcement',  message: 'VIP passes released for Retro Rewind', timestamp: new Date(Date.now() - 10800000).toISOString() },
+    { id: '4', type: 'announcement', message: 'VIP passes released for Retro Rewind', timestamp: new Date(Date.now() - 10800000).toISOString() },
   ],
   upcomingEvents: [
     { id: '1', title: 'NEON PULSE MUSIC FESTIVAL', date: 'OCT 24 - 26', time: '06:00 PM', location: 'Campus Stadium', category: 'CULTURAL', capacity: 2000, registrationsCount: 450, rsvps: 450, organizer: 'Cultural Committee', description: 'The biggest musical extravaganza on campus.', imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80' },
@@ -68,11 +68,11 @@ const mockStats: DashboardStats = {
 };
 
 const mockEvents: Event[] = [
-  { id: '1', title: 'NEON PULSE MUSIC FESTIVAL', date: 'OCT 24 - 26', time: '06:00 PM', location: 'Campus Stadium', category: 'CULTURAL',  capacity: 2000, registrationsCount: 450, rsvps: 450, organizer: 'Cultural Committee', description: 'The biggest musical extravaganza on campus. Three nights, ten artists.', imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80', status: 'published', createdBy: 'org1' },
+  { id: '1', title: 'NEON PULSE MUSIC FESTIVAL', date: 'OCT 24 - 26', time: '06:00 PM', location: 'Campus Stadium', category: 'CULTURAL', capacity: 2000, registrationsCount: 450, rsvps: 450, organizer: 'Cultural Committee', description: 'The biggest musical extravaganza on campus. Three nights, ten artists.', imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80', status: 'published', createdBy: 'org1' },
   { id: '2', title: 'AI & THE FUTURE OF CREATIVITY', date: 'Tomorrow', time: '04:00 PM', location: 'Auditorium A', category: 'TECHNICAL', capacity: 200, registrationsCount: 180, rsvps: 180, organizer: 'CS Dept', description: 'Industry panel on generative AI.', imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80', status: 'published', createdBy: 'org1' },
-  { id: '3', title: 'BRUTALIST UI LAB',            date: 'OCT 30',       time: '02:00 PM', location: 'Design Lab 4',  category: 'WORKSHOP',  capacity: 50,  registrationsCount: 22,  rsvps: 22,  organizer: 'Design Club',         description: 'Hands-on session on raw digital layouts.', imageUrl: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80', status: 'draft',     createdBy: 'org1' },
-  { id: '4', title: 'INTER-COLLEGE SLAM DUNK',     date: 'SAT',          time: '07:00 PM', location: 'Main Gym',      category: 'SPORTS',    capacity: 500, registrationsCount: 340, rsvps: 340, organizer: 'Sports Club',         description: 'Basketball showdown between colleges.', imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=80', status: 'live',      createdBy: 'org1' },
-  { id: '5', title: 'CLUB NIGHT: RETRO REWIND',    date: 'OCT 31',       time: '08:00 PM', location: 'Student Lounge', category: 'CULTURAL', capacity: 150, registrationsCount: 145, rsvps: 145, organizer: 'Entertainment Club', description: 'Retro tunes, arcade machines, neon dancefloors.', imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80', status: 'published', createdBy: 'org1' },
+  { id: '3', title: 'BRUTALIST UI LAB', date: 'OCT 30', time: '02:00 PM', location: 'Design Lab 4', category: 'WORKSHOP', capacity: 50, registrationsCount: 22, rsvps: 22, organizer: 'Design Club', description: 'Hands-on session on raw digital layouts.', imageUrl: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80', status: 'draft', createdBy: 'org1' },
+  { id: '4', title: 'INTER-COLLEGE SLAM DUNK', date: 'SAT', time: '07:00 PM', location: 'Main Gym', category: 'SPORTS', capacity: 500, registrationsCount: 340, rsvps: 340, organizer: 'Sports Club', description: 'Basketball showdown between colleges.', imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=80', status: 'live', createdBy: 'org1' },
+  { id: '5', title: 'CLUB NIGHT: RETRO REWIND', date: 'OCT 31', time: '08:00 PM', location: 'Student Lounge', category: 'CULTURAL', capacity: 150, registrationsCount: 145, rsvps: 145, organizer: 'Entertainment Club', description: 'Retro tunes, arcade machines, neon dancefloors.', imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80', status: 'published', createdBy: 'org1' },
 ];
 
 const mockAnalytics: AnalyticsData = {
@@ -84,25 +84,25 @@ const mockAnalytics: AnalyticsData = {
     { date: 'Sun', count: 120 },
   ],
   eventsByCategory: [
-    { category: 'CULTURAL',  count: 4 },
+    { category: 'CULTURAL', count: 4 },
     { category: 'TECHNICAL', count: 3 },
-    { category: 'SPORTS',    count: 2 },
-    { category: 'WORKSHOP',  count: 3 },
+    { category: 'SPORTS', count: 2 },
+    { category: 'WORKSHOP', count: 3 },
   ],
   topEvents: [
-    { eventId: '1', title: 'NEON PULSE',      registrations: 450 },
+    { eventId: '1', title: 'NEON PULSE', registrations: 450 },
     { eventId: '2', title: 'AI & CREATIVITY', registrations: 180 },
-    { eventId: '5', title: 'CLUB NIGHT',      registrations: 145 },
+    { eventId: '5', title: 'CLUB NIGHT', registrations: 145 },
   ],
 };
 
 const mockRegistrations: Registration[] = [
-  { id: 'r1', eventId: '1', eventTitle: 'NEON PULSE',      attendeeName: 'Alex Kumar', attendeeEmail: 'alex@college.edu',  ticketCode: 'FFLOW-TKT-001', registeredAt: new Date(Date.now() - 86400000).toISOString(), checkedIn: true,  checkedInAt: new Date().toISOString(),                          status: 'confirmed', paymentStatus: 'free' },
-  { id: 'r2', eventId: '1', eventTitle: 'NEON PULSE',      attendeeName: 'Sarah Lee',  attendeeEmail: 'sarah@college.edu', ticketCode: 'FFLOW-TKT-002', registeredAt: new Date(Date.now() - 43200000).toISOString(), checkedIn: false,                                                            status: 'confirmed', paymentStatus: 'free' },
-  { id: 'r3', eventId: '1', eventTitle: 'NEON PULSE',      attendeeName: 'Priya S',    attendeeEmail: 'priya@college.edu', ticketCode: 'FFLOW-TKT-003', registeredAt: new Date(Date.now() - 36000000).toISOString(), checkedIn: false,                                                            status: 'waitlist',  paymentStatus: 'paid' },
-  { id: 'r4', eventId: '2', eventTitle: 'AI & CREATIVITY', attendeeName: 'Rohan V',    attendeeEmail: 'rohan@college.edu', ticketCode: 'FFLOW-TKT-101', registeredAt: new Date(Date.now() - 7200000).toISOString(),  checkedIn: false,                                                            status: 'confirmed', paymentStatus: 'free' },
-  { id: 'r5', eventId: '5', eventTitle: 'CLUB NIGHT',      attendeeName: 'Megha T',    attendeeEmail: 'megha@college.edu', ticketCode: 'FFLOW-TKT-501', registeredAt: new Date(Date.now() - 1800000).toISOString(),  checkedIn: true,  checkedInAt: new Date().toISOString(),                          status: 'confirmed', paymentStatus: 'free' },
-  { id: 'r6', eventId: '5', eventTitle: 'CLUB NIGHT',      attendeeName: 'Karan B',    attendeeEmail: 'karan@college.edu', ticketCode: 'FFLOW-TKT-502', registeredAt: new Date().toISOString(),                           checkedIn: false,                                                            status: 'cancelled', paymentStatus: 'free' },
+  { id: 'r1', eventId: '1', eventTitle: 'NEON PULSE', attendeeName: 'Alex Kumar', attendeeEmail: 'alex@college.edu', ticketCode: 'FFLOW-TKT-001', registeredAt: new Date(Date.now() - 86400000).toISOString(), checkedIn: true, checkedInAt: new Date().toISOString(), status: 'confirmed', paymentStatus: 'free' },
+  { id: 'r2', eventId: '1', eventTitle: 'NEON PULSE', attendeeName: 'Sarah Lee', attendeeEmail: 'sarah@college.edu', ticketCode: 'FFLOW-TKT-002', registeredAt: new Date(Date.now() - 43200000).toISOString(), checkedIn: false, status: 'confirmed', paymentStatus: 'free' },
+  { id: 'r3', eventId: '1', eventTitle: 'NEON PULSE', attendeeName: 'Priya S', attendeeEmail: 'priya@college.edu', ticketCode: 'FFLOW-TKT-003', registeredAt: new Date(Date.now() - 36000000).toISOString(), checkedIn: false, status: 'waitlist', paymentStatus: 'paid' },
+  { id: 'r4', eventId: '2', eventTitle: 'AI & CREATIVITY', attendeeName: 'Rohan V', attendeeEmail: 'rohan@college.edu', ticketCode: 'FFLOW-TKT-101', registeredAt: new Date(Date.now() - 7200000).toISOString(), checkedIn: false, status: 'confirmed', paymentStatus: 'free' },
+  { id: 'r5', eventId: '5', eventTitle: 'CLUB NIGHT', attendeeName: 'Megha T', attendeeEmail: 'megha@college.edu', ticketCode: 'FFLOW-TKT-501', registeredAt: new Date(Date.now() - 1800000).toISOString(), checkedIn: true, checkedInAt: new Date().toISOString(), status: 'confirmed', paymentStatus: 'free' },
+  { id: 'r6', eventId: '5', eventTitle: 'CLUB NIGHT', attendeeName: 'Karan B', attendeeEmail: 'karan@college.edu', ticketCode: 'FFLOW-TKT-502', registeredAt: new Date().toISOString(), checkedIn: false, status: 'cancelled', paymentStatus: 'free' },
 ];
 
 const mockAnnouncements: Announcement[] = [
@@ -110,14 +110,14 @@ const mockAnnouncements: Announcement[] = [
 ];
 
 const mockVolunteers: Volunteer[] = [
-  { id: 'v1', eventId: '1', name: 'Arjun Mehta',  email: 'arjun@college.edu',  phone: '+91 90000 11111', role: 'coordinator',       status: 'checked-in', shift: { start: '14:00', end: '22:00' }, assignedAt: new Date(Date.now() - 5 * 86400000).toISOString(), checkedInAt: new Date(Date.now() - 2 * 3600000).toISOString(),  avatarUrl: 'https://i.pravatar.cc/100?img=12' },
-  { id: 'v2', eventId: '1', name: 'Riya Sharma',  email: 'riya@college.edu',   phone: '+91 90000 22222', role: 'registration-desk', status: 'accepted',   shift: { start: '16:00', end: '20:00' }, assignedAt: new Date(Date.now() - 4 * 86400000).toISOString(),                                          avatarUrl: 'https://i.pravatar.cc/100?img=47' },
-  { id: 'v3', eventId: '1', name: 'Vikram Patel', email: 'vikram@college.edu', phone: '+91 90000 33333', role: 'security',         status: 'accepted',   shift: { start: '18:00', end: '23:00' }, assignedAt: new Date(Date.now() - 4 * 86400000).toISOString(),                                          avatarUrl: 'https://i.pravatar.cc/100?img=33' },
-  { id: 'v4', eventId: '1', name: 'Neha Kapoor',  email: 'neha@college.edu',   phone: '+91 90000 44444', role: 'photography',      status: 'invited',    shift: { start: '17:00', end: '21:00' }, assignedAt: new Date(Date.now() - 3 * 86400000).toISOString(),                                          avatarUrl: 'https://i.pravatar.cc/100?img=45' },
-  { id: 'v5', eventId: '1', name: 'Sanjay Iyer',  email: 'sanjay@college.edu', phone: '+91 90000 55555', role: 'tech-support',     status: 'checked-in', shift: { start: '15:00', end: '22:30' }, assignedAt: new Date(Date.now() - 5 * 86400000).toISOString(), checkedInAt: new Date(Date.now() - 3 * 3600000).toISOString(),  avatarUrl: 'https://i.pravatar.cc/100?img=15' },
-  { id: 'v6', eventId: '1', name: 'Tara Joshi',   email: 'tara@college.edu',                        role: 'first-aid',        status: 'declined',   shift: { start: '18:00', end: '22:00' }, assignedAt: new Date(Date.now() - 2 * 86400000).toISOString(),                                          avatarUrl: 'https://i.pravatar.cc/100?img=49' },
-  { id: 'v7', eventId: '1', name: 'Kabir Singh',  email: 'kabir@college.edu',  phone: '+91 90000 66666', role: 'stage-manager',    status: 'accepted',   shift: { start: '14:00', end: '23:00' }, assignedAt: new Date(Date.now() - 5 * 86400000).toISOString(),                                          avatarUrl: 'https://i.pravatar.cc/100?img=8'  },
-  { id: 'v8', eventId: '1', name: 'Ananya Roy',   email: 'ananya@college.edu', phone: '+91 90000 77777', role: 'catering',         status: 'accepted',   shift: { start: '17:00', end: '21:00' }, assignedAt: new Date(Date.now() - 3 * 86400000).toISOString(),                                          avatarUrl: 'https://i.pravatar.cc/100?img=44' },
+  { id: 'v1', eventId: '1', name: 'Arjun Mehta', email: 'arjun@college.edu', phone: '+91 90000 11111', role: 'coordinator', status: 'checked-in', shift: { start: '14:00', end: '22:00' }, assignedAt: new Date(Date.now() - 5 * 86400000).toISOString(), checkedInAt: new Date(Date.now() - 2 * 3600000).toISOString(), avatarUrl: 'https://i.pravatar.cc/100?img=12' },
+  { id: 'v2', eventId: '1', name: 'Riya Sharma', email: 'riya@college.edu', phone: '+91 90000 22222', role: 'registration-desk', status: 'accepted', shift: { start: '16:00', end: '20:00' }, assignedAt: new Date(Date.now() - 4 * 86400000).toISOString(), avatarUrl: 'https://i.pravatar.cc/100?img=47' },
+  { id: 'v3', eventId: '1', name: 'Vikram Patel', email: 'vikram@college.edu', phone: '+91 90000 33333', role: 'security', status: 'accepted', shift: { start: '18:00', end: '23:00' }, assignedAt: new Date(Date.now() - 4 * 86400000).toISOString(), avatarUrl: 'https://i.pravatar.cc/100?img=33' },
+  { id: 'v4', eventId: '1', name: 'Neha Kapoor', email: 'neha@college.edu', phone: '+91 90000 44444', role: 'photography', status: 'invited', shift: { start: '17:00', end: '21:00' }, assignedAt: new Date(Date.now() - 3 * 86400000).toISOString(), avatarUrl: 'https://i.pravatar.cc/100?img=45' },
+  { id: 'v5', eventId: '1', name: 'Sanjay Iyer', email: 'sanjay@college.edu', phone: '+91 90000 55555', role: 'tech-support', status: 'checked-in', shift: { start: '15:00', end: '22:30' }, assignedAt: new Date(Date.now() - 5 * 86400000).toISOString(), checkedInAt: new Date(Date.now() - 3 * 3600000).toISOString(), avatarUrl: 'https://i.pravatar.cc/100?img=15' },
+  { id: 'v6', eventId: '1', name: 'Tara Joshi', email: 'tara@college.edu', role: 'first-aid', status: 'declined', shift: { start: '18:00', end: '22:00' }, assignedAt: new Date(Date.now() - 2 * 86400000).toISOString(), avatarUrl: 'https://i.pravatar.cc/100?img=49' },
+  { id: 'v7', eventId: '1', name: 'Kabir Singh', email: 'kabir@college.edu', phone: '+91 90000 66666', role: 'stage-manager', status: 'accepted', shift: { start: '14:00', end: '23:00' }, assignedAt: new Date(Date.now() - 5 * 86400000).toISOString(), avatarUrl: 'https://i.pravatar.cc/100?img=8' },
+  { id: 'v8', eventId: '1', name: 'Ananya Roy', email: 'ananya@college.edu', phone: '+91 90000 77777', role: 'catering', status: 'accepted', shift: { start: '17:00', end: '21:00' }, assignedAt: new Date(Date.now() - 3 * 86400000).toISOString(), avatarUrl: 'https://i.pravatar.cc/100?img=44' },
 ];
 
 const mockEventSettings: EventSettings = {
@@ -155,17 +155,17 @@ const mockLiveAttendance: LiveAttendanceData = {
   peakToday: 1380,
   totalCheckedIn: 1320,
   timeline: [
-    { time: '17:00', inside: 0,   cumulative: 0,    arrived: 0,   left: 0 },
-    { time: '17:30', inside: 120, cumulative: 120,  arrived: 120, left: 0 },
-    { time: '18:00', inside: 340, cumulative: 340,  arrived: 220, left: 0 },
-    { time: '18:30', inside: 580, cumulative: 580,  arrived: 240, left: 0 },
-    { time: '19:00', inside: 870, cumulative: 870,  arrived: 290, left: 0 },
+    { time: '17:00', inside: 0, cumulative: 0, arrived: 0, left: 0 },
+    { time: '17:30', inside: 120, cumulative: 120, arrived: 120, left: 0 },
+    { time: '18:00', inside: 340, cumulative: 340, arrived: 220, left: 0 },
+    { time: '18:30', inside: 580, cumulative: 580, arrived: 240, left: 0 },
+    { time: '19:00', inside: 870, cumulative: 870, arrived: 290, left: 0 },
     { time: '19:30', inside: 1140, cumulative: 1140, arrived: 270, left: 0 },
     { time: '20:00', inside: 1280, cumulative: 1280, arrived: 200, left: 60 },
     { time: '20:30', inside: 1380, cumulative: 1380, arrived: 180, left: 80 },
-    { time: '21:00', inside: 1340, cumulative: 1380, arrived: 60,  left: 100 },
-    { time: '21:30', inside: 1280, cumulative: 1390, arrived: 50,  left: 110 },
-    { time: '22:00', inside: 1247, cumulative: 1430, arrived: 40,  left: 73 },
+    { time: '21:00', inside: 1340, cumulative: 1380, arrived: 60, left: 100 },
+    { time: '21:30', inside: 1280, cumulative: 1390, arrived: 50, left: 110 },
+    { time: '22:00', inside: 1247, cumulative: 1430, arrived: 40, left: 73 },
   ],
 };
 
@@ -186,9 +186,9 @@ export const organizerApi = {
   getMyEvents: (params?: { status?: string; category?: string; search?: string }) =>
     withMockFallback(() => API.get<Event[]>('/organizer/events', { params }).then((r) => r.data.map((e: any) => ({ ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl }))),
       mockEvents.filter((e) =>
-        (!params?.status   || params.status   === 'all' || e.status === params.status) &&
+        (!params?.status || params.status === 'all' || e.status === params.status) &&
         (!params?.category || params.category === 'all' || String(e.category).toLowerCase() === String(params.category).toLowerCase()) &&
-        (!params?.search   || e.title.toLowerCase().includes(params.search.toLowerCase()))
+        (!params?.search || e.title.toLowerCase().includes(params.search.toLowerCase()))
       )
     ),
   createEvent: (data: any) => {
@@ -242,7 +242,7 @@ export const organizerApi = {
     },
       mockRegistrations.filter((r) =>
         (!params.eventId || r.eventId === params.eventId) &&
-        (!params.search  || r.attendeeName.toLowerCase().includes(params.search.toLowerCase()))
+        (!params.search || r.attendeeName.toLowerCase().includes(params.search.toLowerCase()))
       )
     ),
   exportRegistrations: (eventId: string) =>

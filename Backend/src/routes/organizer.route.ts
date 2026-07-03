@@ -10,9 +10,11 @@ router.use(requireAuth);
 router.use(requireRole([Role.ORGANIZER, Role.ADMIN]));
 
 router.get('/dashboard', OrganizerController.getDashboard);
-router.get('/analytics', OrganizerController.getDashboard); // Alias
+router.get('/analytics', OrganizerController.getAnalytics);
 router.get('/events', OrganizerController.getEvents);
 router.get('/registrations', OrganizerController.getRegistrations);
 router.post('/announcement', OrganizerController.createAnnouncement);
+router.get('/settings', OrganizerController.getSettings);
+router.get('/profile', OrganizerController.getProfile);
 
 export default router;

@@ -40,7 +40,7 @@ export class EventService {
 
   static async updateEvent(id: string, data: Partial<IEvent>, user: AuthUser): Promise<IEvent> {
     const event = await Event.findOne({ _id: id, isDeleted: false });
-    
+
     if (!event) {
       throw new ApiError(404, 'Event not found');
     }
@@ -52,14 +52,14 @@ export class EventService {
 
     Object.assign(event, data);
     event.updatedBy = user._id as any;
-    
+
     await event.save();
     return event;
   }
 
   static async softDeleteEvent(id: string, user: AuthUser): Promise<void> {
     const event = await Event.findOne({ _id: id, isDeleted: false });
-    
+
     if (!event) {
       throw new ApiError(404, 'Event not found');
     }
@@ -71,7 +71,7 @@ export class EventService {
     event.isDeleted = true;
     event.deletedAt = new Date();
     event.updatedBy = user._id as any;
-    
+
     await event.save();
   }
 }

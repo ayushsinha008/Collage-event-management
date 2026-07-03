@@ -92,6 +92,13 @@ export default function StudentDashboard({
                   </span>
                   <span className="text-xs font-bold text-slate-500">{nextEvent.date}</span>
                 </div>
+                <div className="w-full h-32 md:h-40 border-4 border-on-background overflow-hidden mb-4 bg-slate-900">
+                  <img 
+                    src={nextEvent.imageUrl || `https://picsum.photos/seed/${nextEvent.id}/800/400`} 
+                    alt={nextEvent.title} 
+                    className="w-full h-full object-cover hover:scale-105 transition-transform"
+                  />
+                </div>
                 <h4 
                   onClick={() => setSelectedEvent(nextEvent)}
                   className="font-headline-md text-xl md:text-2xl font-bold uppercase mb-2 hover:text-primary cursor-pointer line-clamp-1 transition-colors"

@@ -42,7 +42,7 @@ export const OrganizerTopbar: React.FC = () => {
               <p className="text-xs font-label-bold text-primary">{organizer.organization}</p>
             </div>
             <img
-              src={organizer.avatarUrl || 'https://i.pravatar.cc/100'}
+              src={organizer.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(organizer.name || 'Organizer')}&background=random`}
               alt={organizer.name}
               className="w-10 h-10 rounded-full border-4 border-on-background object-cover bg-primary-container"
             />

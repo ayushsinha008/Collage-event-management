@@ -115,7 +115,7 @@ const seedData = async () => {
     // Insert ignoring duplicates if any
     try {
       const insertedRegistrations = await Registration.insertMany(registrationsToCreate, { ordered: false });
-      
+
       // Update Event counts and generate tickets
       for (const reg of insertedRegistrations) {
         await Ticket.create({

@@ -49,7 +49,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
       });
     } else {
       let updated = false;
-      if (picture && user.photoURL !== picture) {
+      if (picture && !user.photoURL) {
         user.photoURL = picture;
         updated = true;
       }
