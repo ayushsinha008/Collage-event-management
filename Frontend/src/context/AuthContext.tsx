@@ -90,7 +90,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } catch (e) {
-        console.error('Failed to fetch profile', e);
+        console.warn('Failed to fetch profile from backend, checking local cache', e);
+        const cached = localStorage.getItem(`auth_pfp_${result.user.email?.toLowerCase().trim()}`);
+        if (cached) customPhotoURL = cached;
       }
 
       const loggedInUser: User = {
@@ -102,6 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       localStorage.removeItem('organizer_token');
       localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
+      const token = await result.user.getIdToken();
+      localStorage.setItem('auth_token', token); // FIX: Save token for API calls
       setUser(loggedInUser);
       return loggedInUser;
     } catch (err: any) {
@@ -119,7 +123,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const cleanEmail = email.toLowerCase().trim();
 
         if (role === 'student') {
-          return reject(new Error('Please use Google Sign-In for Student access.'));
+          // Mock login for students
+          const cachedPfp = localStorage.getItem(`auth_pfp_${cleanEmail}`);
+          const loggedInUser: User = {
+            id: 'student-1',
+            name: 'Ayush Sinha',
+            email: cleanEmail,
+            role: 'student',
+            photoURL: cachedPfp || undefined
+          };
+          localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
+          localStorage.setItem('auth_token', 'valid_mock_token');
+          setUser(loggedInUser);
+          return resolve(loggedInUser);
         }
 
         if (role === 'organizer') {
@@ -127,17 +143,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return reject(new Error('INVALID ORGANIZER PASSCODE.'));
           }
 
-          // Check if there is a cached custom PFP for the organizer
-          const savedUserRaw = localStorage.getItem('auth_user');
-          let customPhotoURL = undefined;
-          if (savedUserRaw) {
-            try {
-              const parsed = JSON.parse(savedUserRaw);
-              if (parsed.role === 'organizer' && parsed.photoURL) {
-                customPhotoURL = parsed.photoURL;
-              }
-            } catch (e) {}
-          }
+          const cachedPfp = localStorage.getItem(`auth_pfp_${cleanEmail}`);
+          let customPhotoURL = cachedPfp || undefined;
 
           const loggedInUser: User = {
             id: 'organizer-1',
@@ -147,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: customPhotoURL
           };
           localStorage.setItem('organizer_token', 'mock-organizer-token');
+          localStorage.setItem('auth_token', 'mock-organizer-token');
           localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
           setUser(loggedInUser);
           return resolve(loggedInUser);
@@ -157,17 +165,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return reject(new Error('INVALID VOLUNTEER PASSCODE.'));
           }
 
-          // Check if there is a cached custom PFP for the volunteer
-          const savedUserRaw = localStorage.getItem('auth_user');
-          let customPhotoURL = undefined;
-          if (savedUserRaw) {
-            try {
-              const parsed = JSON.parse(savedUserRaw);
-              if (parsed.role === 'volunteer' && parsed.photoURL) {
-                customPhotoURL = parsed.photoURL;
-              }
-            } catch (e) {}
-          }
+          const cachedPfp = localStorage.getItem(`auth_pfp_${cleanEmail}`);
+          let customPhotoURL = cachedPfp || undefined;
 
           const loggedInUser: User = {
             id: 'volunteer-1',
@@ -177,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: customPhotoURL
           };
           localStorage.setItem('volunteer_authenticated', 'true');
+          localStorage.setItem('auth_token', 'valid_mock_token');
           localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
           setUser(loggedInUser);
           return resolve(loggedInUser);
@@ -220,6 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!prev) return null;
         const updated = { ...prev, photoURL: updatedUrl };
         localStorage.setItem('auth_user', JSON.stringify(updated));
+        localStorage.setItem(`auth_pfp_${prev.email}`, updatedUrl);
         return updated;
       });
       return true;
@@ -232,6 +233,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     await signOut(auth);
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('organizer_token');
     localStorage.removeItem('volunteer_authenticated');
     setUser(null);

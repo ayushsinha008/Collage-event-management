@@ -33,7 +33,7 @@ export default function EventDetail({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div className="border-4 border-on-background overflow-hidden h-64 md:h-80 bg-slate-100">
           <img 
-            src={event.imageUrl} 
+            src={event.imageUrl || `https://picsum.photos/seed/${event.id}/800/400`} 
             alt={event.title} 
             className="w-full h-full object-cover"
           />

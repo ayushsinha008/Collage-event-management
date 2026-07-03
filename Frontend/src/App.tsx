@@ -95,6 +95,7 @@ function App() {
 
   // User RSVP Tickets (Store event IDs the user registered for)
   const [myTickets, setMyTickets] = useState<string[]>([]);
+  const [myTicketDetails, setMyTicketDetails] = useState<any[]>([]);
 
   // 1. Fetch events from MongoDB Backend API
   const fetchEvents = async (silent = false) => {
@@ -131,8 +132,8 @@ function App() {
       }
       setError(null);
     } catch (err) {
-      console.warn('Backend server offline, falling back to mock data.');
-      setEvents(INITIAL_MOCK_EVENTS);
+      console.warn('Backend server fetch failed. Retaining current data or falling back to mock.');
+      setEvents((prev) => prev.length > 0 ? prev : INITIAL_MOCK_EVENTS);
       setError('Offline Mode (Mock Server Active)');
     } finally {
       if (!silent) setLoading(false);
@@ -148,11 +149,33 @@ function App() {
 
   // 2. Fetch User Bookings (if logged in)
   useEffect(() => {
-    // For demo/UI consistency, we'll store local tickets if we don't have an endpoint for my-tickets yet
-    // But we will use the RSVP handler below to actually hit the backend
     if (!user) {
       setMyTickets([]);
+      setMyTicketDetails([]);
+      return;
     }
+    const fetchTickets = async () => {
+      try {
+        const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch(`${baseURL}/users/me/tickets`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const tickets = data.data.tickets || data.data;
+          // Set ticket details
+          setMyTicketDetails(tickets);
+          // Set event IDs for dashboard UI
+          setMyTickets(tickets.map((t: any) => t.registration?.event?._id || t.registration?.event?.id || t.registration?.event));
+        }
+      } catch(err) {
+        console.error('Failed to fetch user tickets:', err);
+      }
+    };
+    fetchTickets();
   }, [user]);
 
   // 3. Synchronize selectedEvent details view when events change
@@ -205,10 +228,15 @@ function App() {
           const data = await response.json();
           // The backend returns the QR code and ticket details
           setMyTickets(prev => [...prev, event.id]);
+          if (data.data && data.data.ticket) {
+            setMyTicketDetails(prev => [...prev, { ...data.data.ticket, registration: { event: event }, qrCodeDataUri: data.data.qrCode }]);
+          }
           setEvents(prev => prev.map(e => e.id === event.id ? { ...e, rsvps: (e.rsvps||0) + 1 } : e));
           
           if (data.data && data.data.qrCode) {
-             alert(`Success! Your Ticket Code is: ${data.data.ticket?.ticketCode}`);
+             alert(`Ticket Booked Successfully! Your Ticket Code is: ${data.data.ticket?.ticketCode}`);
+             setSelectedEvent(null);
+             setCurrentTab('events');
           }
         } else {
            const errData = await response.json();
@@ -291,11 +319,12 @@ function App() {
           ) : (
 
             /* --- My Tickets View --- */
-            <TicketWallet
-              events={events}
-              myTickets={myTickets}
-              handleRegister={handleRegister}
-              setCurrentTab={setCurrentTab}
+            <TicketWallet 
+              events={events} 
+              myTickets={myTickets} 
+              ticketDetails={myTicketDetails}
+              handleRegister={handleRegister} 
+              setCurrentTab={setCurrentTab} 
             />
           )}
         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Event } from '../../types';
 
 interface NewEventShape {
@@ -39,12 +40,12 @@ export default function HostEventModal({
     if (setNewEvent) setNewEvent(updater);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="bg-white border-4 border-on-background w-full max-w-lg rounded-none overflow-hidden shadow-2xl relative z-10 p-6">
-        <div className="flex justify-between items-center mb-6 pb-4 border-b-4 border-on-background">
+      <div className="bg-white border-4 border-on-background w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden rounded-none shadow-2xl relative z-10 p-6">
+        <div className="flex justify-between items-center mb-4 pb-4 border-b-4 border-on-background shrink-0">
           <h3 className="font-headline-md text-2xl font-bold uppercase flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">{isEdit ? 'edit' : 'add_circle'}</span>
             {isEdit ? 'Edit Event' : 'Host Event'}
@@ -58,10 +59,12 @@ export default function HostEventModal({
           onSubmit={(e) => {
             if (isEdit && onUpdate) onUpdate(e);
             else handleSubmit(e);
+
           }}
-          className="space-y-4"
+          className="flex flex-col overflow-hidden"
         >
-          <div>
+          <div className="space-y-4 overflow-y-auto pr-2 flex-1">
+            <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Event Title *</label>
             <input
               name="title" type="text" required
@@ -87,20 +90,18 @@ export default function HostEventModal({
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Date *</label>
               <input
-                name="date" type="text" required
-                defaultValue={newEvent.date}
+                name="date" type="date" required
+                defaultValue={newEvent.date ? newEvent.date.split('T')[0] : ''}
                 onChange={(e) => safeSet((p) => ({ ...p, date: e.target.value }))}
-                placeholder="e.g. OCT 30"
                 className="w-full bg-white border-4 border-on-background p-2 text-sm focus:ring-0 focus:border-on-background"
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Time *</label>
               <input
-                name="time" type="text" required
+                name="time" type="time" required
                 defaultValue={newEvent.time}
                 onChange={(e) => safeSet((p) => ({ ...p, time: e.target.value }))}
-                placeholder="e.g. 04:00 PM"
                 className="w-full bg-white border-4 border-on-background p-2 text-sm focus:ring-0 focus:border-on-background"
               />
             </div>
@@ -169,7 +170,8 @@ export default function HostEventModal({
             />
           </div>
 
-          <div className="pt-4 border-t-4 border-on-background flex justify-end gap-3">
+          </div>
+          <div className="pt-4 mt-4 border-t-4 border-on-background flex justify-end gap-3 shrink-0">
             <button type="button" onClick={onClose} className="border-2 border-on-background px-4 py-2 font-label-bold uppercase text-xs hover:bg-[#ffdad6] hover-lift press-down">
               Cancel
             </button>
@@ -181,4 +183,6 @@ export default function HostEventModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

@@ -65,21 +65,30 @@ export class RegistrationService {
       // Generate Ticket
       const ticketCode = `TKT-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString().slice(-4)}`;
       const qrToken = uuidv4();
-      
-      // We only encode the qrToken in the QR code for security
       const qrCodeDataUri = await generateQRCode(qrToken);
 
-      const ticket = await Ticket.create(
-        [
-          {
-            registration: registration._id,
-            ticketCode,
-            qrToken,
-            status: TicketStatus.ACTIVE,
-          },
-        ],
-        { session }
-      );
+      let ticket;
+      const existingTicket = await Ticket.findOne({ registration: registration._id }).session(session);
+      
+      if (existingTicket) {
+        existingTicket.ticketCode = ticketCode;
+        existingTicket.qrToken = qrToken;
+        existingTicket.status = TicketStatus.ACTIVE;
+        ticket = await existingTicket.save({ session });
+      } else {
+        const createdTickets = await Ticket.create(
+          [
+            {
+              registration: registration._id,
+              ticketCode,
+              qrToken,
+              status: TicketStatus.ACTIVE,
+            },
+          ],
+          { session }
+        );
+        ticket = createdTickets[0];
+      }
 
       // Update Event Registration Count
       event.registrationCount += 1;
@@ -88,7 +97,7 @@ export class RegistrationService {
       await session.commitTransaction();
       session.endSession();
 
-      return { registration, ticket: ticket[0], qrCode: qrCodeDataUri };
+      return { registration, ticket, qrCode: qrCodeDataUri };
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
@@ -167,7 +176,15 @@ export class RegistrationService {
       .paginate();
 
     const tickets = await features.query;
-    return tickets;
+    
+    // Generate QR code data URI for each ticket
+    const ticketsWithQR = await Promise.all(tickets.map(async (ticket: any) => {
+      const ticketObj = ticket.toObject();
+      ticketObj.qrCodeDataUri = await generateQRCode(ticket.qrToken);
+      return ticketObj;
+    }));
+    
+    return ticketsWithQR;
   }
 
   static async getTicketById(ticketId: string, user: AuthUser) {

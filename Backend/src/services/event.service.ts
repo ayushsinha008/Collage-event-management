@@ -5,9 +5,8 @@ import { AuthUser, Role } from '../types';
 
 export class EventService {
   static async getEvents(queryString: any): Promise<{ events: IEvent[]; total: number }> {
-    // Only return non-deleted events
-    let filter = { isDeleted: false };
-    
+    // Only return non-deleted events and exclude Drafts
+    let filter = { isDeleted: false, status: { $ne: 'Draft' } };
     const features = new APIFeatures(Event.find(filter).populate('organizer', 'name email'), queryString)
       .filter()
       .search(['title', 'description', 'category', 'venue', 'tags'])

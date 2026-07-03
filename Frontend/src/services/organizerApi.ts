@@ -33,7 +33,12 @@ API.interceptors.response.use((response) => {
 const withMockFallback = async <T>(apiCall: () => Promise<T>, mockData: T): Promise<T> => {
   try {
     return await apiCall();
-  } catch (err) {
+  } catch (err: any) {
+    // If we have a response from the server (e.g. 400, 404), throw it! 
+    // It means the backend is online but rejected the request.
+    if (err.response) {
+      throw err;
+    }
     console.warn('Backend server offline, using mock data.', err);
     await new Promise((resolve) => setTimeout(resolve, 400));
     return mockData;
@@ -174,26 +179,42 @@ export const organizerApi = {
   // Dashboard
   getDashboardStats: () =>
     withMockFallback(() => API.get<DashboardStats>('/organizer/dashboard').then((r) => r.data), mockStats),
+  getLiveAttendance: (eventId: string) =>
+    withMockFallback(() => API.get<LiveAttendanceData>(`/organizer/events/${eventId}/live-attendance`).then((r) => r.data), mockLiveAttendance),
 
   // Events
   getMyEvents: (params?: { status?: string; category?: string; search?: string }) =>
-    withMockFallback(() => API.get<Event[]>('/organizer/events', { params }).then((r) => r.data),
+    withMockFallback(() => API.get<Event[]>('/organizer/events', { params }).then((r) => r.data.map((e: any) => ({ ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl }))),
       mockEvents.filter((e) =>
         (!params?.status   || params.status   === 'all' || e.status === params.status) &&
         (!params?.category || params.category === 'all' || String(e.category).toLowerCase() === String(params.category).toLowerCase()) &&
         (!params?.search   || e.title.toLowerCase().includes(params.search.toLowerCase()))
       )
     ),
-  createEvent: (data: any) =>
-    withMockFallback(() => API.post<Event>('/events', data).then((r) => r.data),
+  createEvent: (data: any) => {
+    const payload: any = { ...data };
+    if (data.imageUrl) payload.bannerImage = data.imageUrl;
+    return withMockFallback(() => API.post<Event>('/events', payload).then((r) => { const e: any = r.data; return { ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl }; }),
       { ...data, id: 'evt-' + Date.now(), status: 'draft', registrations: 0, capacity: data.capacity || 100 } as Event
-    ),
+    );
+  },
   getEvent: (id: string) =>
-    withMockFallback(() => API.get<Event>(`/events/${id}`).then((r) => r.data), mockEvents.find((e) => e.id === id) as Event),
-  updateEvent: (id: string, data: Partial<Event>) =>
-    withMockFallback(() => API.patch<Event>(`/events/${id}`, data).then((r) => r.data),
+    withMockFallback(() => API.get<Event>(`/events/${id}`).then((r) => { const e: any = r.data; return { ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl }; }), mockEvents.find((e) => e.id === id) as Event),
+  updateEvent: (id: string, data: Partial<Event>) => {
+    const payload: any = { ...data };
+    if (data.location) payload.venue = data.location;
+    if (data.time) {
+      payload.startTime = data.time;
+      payload.endTime = data.time; // temporary fix for missing endTime
+    }
+    if (data.date && !data.date.includes('T')) {
+      payload.date = new Date(data.date).toISOString();
+    }
+    if (data.imageUrl) payload.bannerImage = data.imageUrl;
+    return withMockFallback(() => API.patch<Event>(`/events/${id}`, payload).then((r) => r.data),
       { ...(mockEvents.find((e) => e.id === id) as Event), ...data }
-    ),
+    );
+  },
   deleteEvent: (id: string) =>
     withMockFallback(() => API.delete(`/events/${id}`).then((r) => r.data), { success: true }),
   publishEvent: (id: string) =>
@@ -201,7 +222,24 @@ export const organizerApi = {
 
   // Registrations
   getRegistrations: (params: { eventId?: string; search?: string; status?: string }) =>
-    withMockFallback(() => API.get<Registration[]>('/organizer/registrations', { params }).then((r) => r.data),
+    withMockFallback(async () => {
+      const r = await API.get('/organizer/registrations', { params });
+      // The interceptor already unwraps response.data.data into response.data
+      const items = Array.isArray(r.data) ? r.data : (r.data?.data || []);
+      return items.map((reg: any) => ({
+        id: reg._id,
+        eventId: reg.event?._id || reg.event,
+        eventTitle: reg.event?.title || 'Unknown Event',
+        attendeeName: reg.user?.name || 'Unknown',
+        attendeeEmail: reg.user?.email || 'Unknown',
+        ticketCode: reg.ticket?.ticketCode || 'N/A',
+        registeredAt: reg.createdAt,
+        checkedIn: reg.ticket?.status === 'used' || reg.status === 'checked-in',
+        checkedInAt: reg.ticket?.usedAt || reg.updatedAt,
+        status: reg.status,
+        paymentStatus: 'free'
+      }));
+    },
       mockRegistrations.filter((r) =>
         (!params.eventId || r.eventId === params.eventId) &&
         (!params.search  || r.attendeeName.toLowerCase().includes(params.search.toLowerCase()))

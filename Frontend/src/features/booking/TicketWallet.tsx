@@ -3,6 +3,7 @@ import { Event } from '../../types';
 interface TicketWalletProps {
   events: Event[];
   myTickets: string[];
+  ticketDetails?: any[];
   handleRegister: (event: Event) => void;
   setCurrentTab: (tab: 'dashboard' | 'events' | 'tickets') => void;
 }
@@ -10,6 +11,7 @@ interface TicketWalletProps {
 export default function TicketWallet({
   events,
   myTickets,
+  ticketDetails = [],
   handleRegister,
   setCurrentTab
 }: TicketWalletProps) {
@@ -27,6 +29,17 @@ export default function TicketWallet({
           {myTickets.map(id => {
             const event = events.find(e => e.id === id);
             if (!event) return null;
+            
+            // Find corresponding ticket detail
+            const ticketDetail = ticketDetails.find(t => 
+              t.registration?.event?._id === id || 
+              t.registration?.event?.id === id || 
+              t.registration?.event === id
+            );
+            
+            const qrCodeUrl = ticketDetail?.qrCodeDataUri || ticketDetail?.qrCode;
+            const ticketCode = ticketDetail?.ticketCode || `FFLOW-TKT-${event.id.toUpperCase().substring(0,6)}`;
+
             return (
               <div key={event.id} className="bg-white border-4 border-on-background neo-shadow ticket-edge flex flex-col">
                 <div className="p-6 border-b-2 border-dashed border-on-background flex justify-between items-center bg-[#dcd5fd]">
@@ -53,14 +66,17 @@ export default function TicketWallet({
                   </div>
 
                   <div className="flex flex-col items-center border-t-2 border-on-background/10 pt-4 text-center">
-                    <div className="w-36 h-36 border-4 border-on-background p-2.5 bg-white mb-2 shadow-sm">
-                      {/* QR Image representation */}
-                      <span className="material-symbols-outlined text-[115px] leading-none select-none text-on-background">
-                        qr_code_2
-                      </span>
+                    <div className="w-36 h-36 border-4 border-on-background p-2.5 bg-white mb-2 shadow-sm flex items-center justify-center">
+                      {qrCodeUrl ? (
+                        <img src={qrCodeUrl} alt="Ticket QR Code" className="w-full h-full object-contain" />
+                      ) : (
+                        <span className="material-symbols-outlined text-[115px] leading-none select-none text-on-background">
+                          qr_code_2
+                        </span>
+                      )}
                     </div>
                     <span className="font-label-bold text-xs uppercase tracking-widest text-[#1b6b4f]">
-                      FFLOW-TKT-{event.id}
+                      {ticketCode}
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-1 uppercase font-semibold">
                       SCANNER SECURE CODE

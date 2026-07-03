@@ -44,17 +44,52 @@ export const CreateEventPage: React.FC = () => {
 
   const set = <K extends keyof typeof form>(k: K, v: typeof form[K]) => setForm((p) => ({ ...p, [k]: v }));
 
-  const canStep1 = form.title.trim() && form.description.trim() && form.category;
+  const canStep1 = form.title.trim() && form.description.trim().length >= 10 && form.category;
   const canStep2 = form.date.trim() && form.time.trim() && form.location.trim();
   const canStep3 = form.capacity > 0 && form.organizer.trim();
 
   const submit = async (mode: PublishMode) => {
+    if (!canStep1) return alert("Please complete Step 1 (Basics). Description must be at least 10 chars.");
+    if (!canStep2) return alert("Please complete Step 2 (When & Where). Ensure Date, Time, and Location are filled.");
+    if (!canStep3) return alert("Please complete Step 3 (Capacity & Cover). Capacity must be > 0 and Organizer must be filled.");
+
     setBusy(true);
     try {
-      const created = await organizerApi.createEvent({ ...form, status: mode });
-      navigate(`/organizer/events/${(created as Event).id ?? '1'}`);
-    } catch {
-      navigate(`/organizer/events/1`);
+      let isoDate = "";
+      try {
+        isoDate = new Date(form.date).toISOString();
+      } catch {
+        alert("Invalid Date format. Please select a valid date.");
+        setBusy(false);
+        return;
+      }
+
+      const payload = {
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        venue: form.location,
+        date: isoDate,
+        startTime: form.time,
+        endTime: "23:59",
+        capacity: form.capacity,
+        imageUrl: form.imageUrl,
+        status: mode === 'draft' ? 'Draft' : 'Upcoming',
+      };
+      
+      const created = await organizerApi.createEvent(payload);
+      navigate('/organizer/events');
+    } catch (err: any) {
+      console.error("Create Event Error:", err.response?.data || err);
+      const data = err.response?.data;
+      let errMsg = data?.message || "Please check your inputs.";
+      
+      if (data?.errors && Array.isArray(data.errors)) {
+        // Backend returns an array of formatted strings for errors
+        errMsg += '\n\nDetails:\n' + data.errors.join('\n');
+      }
+
+      alert(`Failed to create event: ${errMsg}`);
     } finally {
       setBusy(false);
     }
@@ -114,9 +149,18 @@ export const CreateEventPage: React.FC = () => {
                 rows={4}
                 className="w-full bg-background border-4 border-on-background px-4 py-3 text-sm resize-none focus:outline-none focus:neo-shadow-sm"
               />
-              <p className="text-xs font-label-bold text-on-surface-variant mt-1 uppercase">
-                {form.description.length} chars · Aim for 120–280
-              </p>
+              <div className="flex justify-between items-center mt-1">
+                <p className={`text-xs font-label-bold uppercase ${
+                  form.description.length > 0 && form.description.length < 10 
+                    ? 'text-error font-extrabold' 
+                    : 'text-on-surface-variant'
+                }`}>
+                  {form.description.length > 0 && form.description.length < 10 
+                    ? `Too short! Minimum 10 chars (${10 - form.description.length} more needed)`
+                    : `${form.description.length} chars · Aim for 120–280`
+                  }
+                </p>
+              </div>
             </FieldRow>
 
             <FieldRow label="Category *" icon={Tag}>
@@ -263,14 +307,14 @@ export const CreateEventPage: React.FC = () => {
           <div className="flex gap-2">
             <button
               onClick={() => submit('draft')}
-              disabled={busy || !canStep3}
+              disabled={busy}
               className="border-4 border-on-background bg-surface-variant px-5 py-3 font-label-bold uppercase hover-lift press-down disabled:opacity-50 flex items-center gap-2"
             >
               <Save className="w-4 h-4 stroke-[3]" /> Save Draft
             </button>
             <button
               onClick={() => submit('published')}
-              disabled={busy || !canStep3}
+              disabled={busy}
               className="border-4 border-on-background bg-primary-fixed text-on-primary-fixed px-6 py-3 font-extrabold uppercase neo-shadow hover-lift press-down disabled:opacity-50 flex items-center gap-2"
             >
               <Send className="w-4 h-4 stroke-[3]" /> Publish Event

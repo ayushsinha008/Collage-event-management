@@ -31,6 +31,7 @@ export class OrganizerController {
     const events = await Event.find({ organizer: req.user!._id, isDeleted: false }).select('_id');
     const eventIds = events.map((e) => e._id);
 
+    // Fetch registrations first
     const features = new APIFeatures(
       Registration.find({ event: { $in: eventIds } }).populate('user', 'name email').populate('event', 'title'),
       req.query
@@ -40,7 +41,21 @@ export class OrganizerController {
       .paginate();
 
     const registrations = await features.query;
-    sendSuccess(req, res, 200, 'Organizer registrations fetched', registrations);
+    
+    // For each registration, fetch its ticket
+    const Ticket = require('../models/Ticket.model').Ticket;
+    const regIds = registrations.map(r => r._id);
+    const tickets = await Ticket.find({ registration: { $in: regIds } });
+    
+    const enhancedRegistrations = registrations.map(r => {
+      const ticket = tickets.find(t => t.registration.toString() === r._id.toString());
+      return {
+        ...r.toObject(),
+        ticket: ticket ? ticket.toObject() : null
+      };
+    });
+
+    sendSuccess(req, res, 200, 'Organizer registrations fetched', enhancedRegistrations);
   }
 
   static async createAnnouncement(req: AuthRequest, res: Response) {

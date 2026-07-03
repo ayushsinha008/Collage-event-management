@@ -103,7 +103,7 @@ export default function EventDashboard({
                     <div className="md:w-1/2 relative overflow-hidden h-64 md:h-auto bg-slate-900">
                       <img 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                        src={event.imageUrl} 
+                        src={event.imageUrl || `https://picsum.photos/seed/${event.id}/800/400`} 
                         alt={event.title}
                       />
                       <div className="absolute top-4 left-4 bg-[#ffe24c] border-2 border-on-background px-3 py-1 font-label-bold text-xs">
@@ -199,7 +199,7 @@ export default function EventDashboard({
                     <div className="h-48 overflow-hidden border-b-4 border-on-background bg-slate-900">
                       <img 
                         className="w-full h-full object-cover group-hover:scale-105 transition-all" 
-                        src={event.imageUrl} 
+                        src={event.imageUrl || `https://picsum.photos/seed/${event.id}/800/400`} 
                         alt={event.title}
                       />
                     </div>
@@ -321,12 +321,20 @@ export default function EventDashboard({
               onClick={() => setSelectedEvent(event)}
               className="md:col-span-4 group cursor-pointer"
             >
-              <div className="bg-white border-4 border-on-background neo-shadow hover-lift h-full flex flex-col justify-between p-6">
-                <div>
-                  <span className="bg-[#a7f3d0] border-2 border-on-background px-2.5 py-0.5 text-[10px] font-label-bold uppercase inline-block mb-3">
-                    {event.category}
-                  </span>
-                  <h4 className="font-headline-md text-headline-md mb-2 group-hover:text-primary transition-colors">
+              <div className="bg-white border-4 border-on-background neo-shadow hover-lift h-full flex flex-col">
+                <div className="h-48 overflow-hidden border-b-4 border-on-background bg-slate-900 shrink-0">
+                  <img 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-all" 
+                    src={event.imageUrl || `https://picsum.photos/seed/${event.id}/800/400`} 
+                    alt={event.title}
+                  />
+                </div>
+                <div className="p-6 flex flex-col flex-1 justify-between">
+                  <div>
+                    <span className="bg-[#a7f3d0] border-2 border-on-background px-2.5 py-0.5 text-[10px] font-label-bold uppercase inline-block mb-3">
+                      {event.category}
+                    </span>
+                    <h4 className="font-headline-md text-headline-md mb-2 group-hover:text-primary transition-colors">
                     {event.title}
                   </h4>
                   <p className="text-on-surface-variant text-sm line-clamp-3 mb-4">
@@ -352,6 +360,7 @@ export default function EventDashboard({
                 </div>
               </div>
             </div>
+          </div>
           ))
           }
 

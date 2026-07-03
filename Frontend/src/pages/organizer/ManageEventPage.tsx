@@ -44,17 +44,22 @@ export const ManageEventPage: React.FC = () => {
     if (!id) return;
     (async () => {
       setLoading(true);
-      const [ev, la, ann, set] = await Promise.all([
-        organizerApi.getEventById(id),
-        organizerApi.getLiveAttendance(id),
-        organizerApi.getAnnouncements(),
-        organizerApi.getEventSettings(id),
-      ]);
-      setEvent(ev);
-      setLive(la);
-      setAnnouncements(ann.filter((a: Announcement) => a.eventId === id));
-      setSettings(set);
-      setLoading(false);
+      try {
+        const [ev, la, ann, set] = await Promise.all([
+          organizerApi.getEvent(id),
+          organizerApi.getLiveAttendance(id).catch(() => null),
+          organizerApi.getAnnouncements().catch(() => []),
+          organizerApi.getEventSettings(id).catch(() => null),
+        ]);
+        setEvent(ev);
+        setLive(la);
+        setAnnouncements(ann ? ann.filter((a: Announcement) => a.eventId === id) : []);
+        setSettings(set);
+      } catch (err) {
+        console.error("Failed to load event details", err);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [id]);
 
