@@ -6,6 +6,7 @@ import { EventVolunteer } from '../models/EventVolunteer.model';
 import { EventSettings } from '../models/EventSettings.model';
 import { User } from '../models/User.model';
 import { Ticket } from '../models/Ticket.model';
+import { Notification } from '../models/Notification.model';
 import { ApiError } from '../utils/ApiError';
 import { AuthUser } from '../types';
 
@@ -240,5 +241,33 @@ export class OrganizerService {
       role: 'organizer',
       avatarUrl: dbUser.photoURL,
     };
+  }
+
+  static async getNotifications(user: AuthUser) {
+    return Notification.find({ user: user._id }).sort({ createdAt: -1 }).limit(50);
+  }
+
+  static async readAllNotifications(user: AuthUser) {
+    await Notification.updateMany({ user: user._id, read: false }, { read: true });
+    return { success: true };
+  }
+
+  static async readNotification(id: string, user: AuthUser) {
+    const notification = await Notification.findOneAndUpdate(
+      { _id: id, user: user._id },
+      { read: true },
+      { new: true }
+    );
+    if (!notification) throw new ApiError(404, 'Notification not found');
+    return notification;
+  }
+
+  static async createNotification(userId: string, title: string, message: string, type = 'INFO') {
+    return Notification.create({
+      user: userId,
+      title,
+      message,
+      type
+    });
   }
 }

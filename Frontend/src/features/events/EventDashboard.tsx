@@ -24,11 +24,12 @@ export default function EventDashboard({
   
   // Filter events based on active category selection and search query
   const filteredEvents = events.filter(e => {
+    const cat = (e.category || '').toLowerCase();
     const matchesCategory = selectedCategory === 'all' || 
-           (selectedCategory === 'festivals' && e.category === 'cultural') ||
-           (selectedCategory === 'tech talks' && e.category === 'technical') ||
-           (selectedCategory === 'sports' && e.category === 'sports') ||
-           (selectedCategory === 'workshops' && e.category === 'academic');
+           (selectedCategory === 'festivals' && (cat === 'cultural' || cat === 'festival')) ||
+           (selectedCategory === 'tech talks' && (cat === 'technical' || cat === 'technology' || cat === 'tech')) ||
+           (selectedCategory === 'sports' && cat === 'sports') ||
+           (selectedCategory === 'workshops' && (cat === 'academic' || cat === 'workshop' || cat === 'seminar'));
            
     const matchesSearch = !searchQuery.trim() || 
            e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

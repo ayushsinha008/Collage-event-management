@@ -3,6 +3,7 @@ import { Ticket } from '../models/Ticket.model';
 import { Event } from '../models/Event.model';
 import { ApiError } from '../utils/ApiError';
 import { AuthUser, TicketStatus, Role } from '../types';
+import { OrganizerService } from './organizer.service';
 
 export class CheckInService {
   static async processCheckIn(qrToken: string, user: AuthUser) {
@@ -51,6 +52,18 @@ export class CheckInService {
 
       await session.commitTransaction();
       session.endSession();
+
+      // Create Notification for the organizer
+      try {
+        await OrganizerService.createNotification(
+          event.organizer.toString(),
+          'Attendee Checked In',
+          `Student "${registration.user?.email || registration.user?.name || 'Attendee'}" has checked in for event "${event.title}".`,
+          'CHECKIN'
+        );
+      } catch (err) {
+        console.error('Failed to create check-in notification:', err);
+      }
 
       return {
         ticket: ticket,

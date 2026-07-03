@@ -6,7 +6,6 @@ import { DashboardPage } from './pages/organizer/DashboardPage';
 import { MyEventsPage } from './pages/organizer/MyEventsPage';
 import { CreateEventPage } from './pages/organizer/CreateEventPage';
 import { ManageEventPage } from './pages/organizer/ManageEventPage';
-import { VolunteersPage } from './pages/organizer/VolunteersPage';
 import { RegistrationsPage } from './pages/organizer/RegistrationsPage';
 import { AnalyticsPage } from './pages/organizer/AnalyticsPage';
 import { AnnouncementsPage } from './pages/organizer/AnnouncementsPage';
@@ -37,7 +36,6 @@ const OrganizerAppContent: React.FC = () => {
         <Route path="events"        element={<MyEventsPage />} />
         <Route path="events/new"    element={<CreateEventPage />} />
         <Route path="events/:id"    element={<ManageEventPage />} />
-        <Route path="volunteers"    element={<VolunteersPage />} />
         <Route path="registrations" element={<RegistrationsPage />} />
         <Route path="analytics"     element={<AnalyticsPage />} />
         <Route path="announcements" element={<AnnouncementsPage />} />

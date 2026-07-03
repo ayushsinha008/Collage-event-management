@@ -11,14 +11,12 @@ import {
   Zap,
   Settings,
   ClipboardList,
-  HeartHandshake,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/organizer/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
   { to: '/organizer/events',        label: 'My Events',     icon: CalendarRange },
   { to: '/organizer/registrations', label: 'Registrations', icon: Users },
-  { to: '/organizer/volunteers',    label: 'Volunteers',    icon: HeartHandshake },
   { to: '/organizer/analytics',     label: 'Analytics',     icon: BarChart3 },
   { to: '/organizer/announcements', label: 'Announcements', icon: Megaphone },
   { to: '/organizer/settings',      label: 'Settings',      icon: Settings },

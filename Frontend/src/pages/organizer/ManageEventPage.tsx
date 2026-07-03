@@ -1,20 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Eye, Calendar, MapPin, Users, Edit, Trash2, Share2, BarChart3, Megaphone, Settings as SettingsIcon, ClipboardList, HeartHandshake, Send } from 'lucide-react';
+import { ArrowLeft, Eye, Calendar, MapPin, Users, Edit, Trash2, Share2, BarChart3, Megaphone, Settings as SettingsIcon, ClipboardList, Send } from 'lucide-react';
 import { Event } from '../../types/event';
 import { organizerApi } from '../../services/organizerApi';
 import { EventStatusBadge } from '../../components/organizer/events/EventStatusBadge';
 import { RegistrationTable } from '../../components/organizer/registrations/RegistrationTable';
-import VolunteerAssignView from '../../components/organizer/manage/VolunteerAssignView';
 import { LiveAttendanceChart } from '../../components/organizer/analytics/LiveAttendanceChart';
 import { LiveAttendanceData, Announcement, EventSettings } from '../../types/organizer';
 
-type Tab = 'overview' | 'registrations' | 'volunteers' | 'announcements' | 'settings';
+type Tab = 'overview' | 'registrations' | 'announcements' | 'settings';
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3 },
   { id: 'registrations', label: 'Registrations', icon: ClipboardList },
-  { id: 'volunteers',    label: 'Volunteers',    icon: HeartHandshake },
   { id: 'announcements', label: 'Announcements', icon: Megaphone },
   { id: 'settings',      label: 'Settings',      icon: SettingsIcon },
 ];
@@ -27,7 +25,7 @@ export const ManageEventPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs: Tab[] = ['overview', 'registrations', 'volunteers', 'announcements', 'settings'];
+  const validTabs: Tab[] = ['overview', 'registrations', 'announcements', 'settings'];
   const tabFromUrl = searchParams.get('tab') as Tab | null;
   const [tab, setTabState] = useState<Tab>(tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : 'overview');
 
@@ -193,7 +191,6 @@ export const ManageEventPage: React.FC = () => {
 
         {tab === 'registrations' && <RegistrationTableLazy eventId={event.id} />}
 
-        {tab === 'volunteers' && <VolunteerAssignView eventId={event.id} />}
 
         {tab === 'announcements' && (
           <AnnouncementsTab eventId={event.id} announcements={announcements} setAnnouncements={setAnnouncements} />

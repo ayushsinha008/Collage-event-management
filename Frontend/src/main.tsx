@@ -4,6 +4,10 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { AuthPage } from './pages/AuthPage.tsx';
 import './index.css';
+import { initTheme, initDensity } from './utils/theme.ts';
+
+initTheme();
+initDensity();
 
 const StudentApp = lazy(() => import('./App.tsx'));
 const OrganizerApp = lazy(() => import('./OrganizerApp.tsx'));

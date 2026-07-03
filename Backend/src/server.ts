@@ -4,14 +4,30 @@ import { env } from './config/env.config';
 import { logger } from './utils/logger';
 
 let server: any;
+let mongoMemoryServer: any;
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(env.MONGO_URI);
+    logger.info(`Connecting to MongoDB at ${env.MONGO_URI}...`);
+    const conn = await mongoose.connect(env.MONGO_URI, { serverSelectionTimeoutMS: 4000 });
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    logger.error('Error connecting to MongoDB:', error);
-    process.exit(1);
+    logger.warn('Failed to connect to local MongoDB. Initializing in-memory MongoDB fallback...');
+    try {
+      const { MongoMemoryReplSet } = require('mongodb-memory-server');
+      mongoMemoryServer = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+      const uri = mongoMemoryServer.getUri();
+      const conn = await mongoose.connect(uri);
+      logger.info(`In-memory MongoDB Connected: ${conn.connection.host}`);
+      
+      logger.info('Seeding in-memory database with initial mock data...');
+      const { seedData } = require('./utils/seed');
+      await seedData(false, false);
+      logger.info('In-memory database seeded successfully.');
+    } catch (memError) {
+      logger.error('Failed to initialize in-memory MongoDB:', memError);
+      process.exit(1);
+    }
   }
 };
 
@@ -34,6 +50,10 @@ const gracefulShutdown = async (signal: string) => {
       try {
         await mongoose.connection.close(false);
         logger.info('MongoDB connection closed.');
+        if (mongoMemoryServer) {
+          await mongoMemoryServer.stop();
+          logger.info('In-memory MongoDB stopped.');
+        }
         process.exit(0);
       } catch (err) {
         logger.error('Error closing MongoDB connection:', err);
