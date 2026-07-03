@@ -1,32 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Eye, Calendar, MapPin, Users, Edit, Trash2, Share2, BarChart3, Megaphone, Settings as SettingsIcon, ClipboardList, HeartHandshake } from 'lucide-react';
+import { ArrowLeft, Eye, Calendar, MapPin, Users, Edit, Trash2, Share2, BarChart3, Megaphone, Settings as SettingsIcon, ClipboardList, Send } from 'lucide-react';
 import { Event } from '../../types/event';
 import { organizerApi } from '../../services/organizerApi';
 import { EventStatusBadge } from '../../components/organizer/events/EventStatusBadge';
 import { RegistrationTable } from '../../components/organizer/registrations/RegistrationTable';
-import VolunteerAssignView from '../../components/organizer/manage/VolunteerAssignView';
 import { LiveAttendanceChart } from '../../components/organizer/analytics/LiveAttendanceChart';
 import { LiveAttendanceData, Announcement, EventSettings } from '../../types/organizer';
 
-type Tab = 'overview' | 'registrations' | 'volunteers' | 'announcements' | 'settings';
+type Tab = 'overview' | 'registrations' | 'announcements' | 'settings';
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'overview',      label: 'Overview',      icon: BarChart3 },
   { id: 'registrations', label: 'Registrations', icon: ClipboardList },
-  { id: 'volunteers',    label: 'Volunteers',    icon: HeartHandshake },
   { id: 'announcements', label: 'Announcements', icon: Megaphone },
   { id: 'settings',      label: 'Settings',      icon: SettingsIcon },
 ];
 
-// Helper: ensure imageUrl is a string (TS narrowing)
-const safeImg = (e: Event) => e.imageUrl || `https://picsum.photos/seed/${e.id}/800/300`;
+// Helper: event banner or neutral placeholder
+const safeImg = (e: Event) =>
+  e.imageUrl || `https://placehold.co/800x300/e8e8e8/1b1b1b?text=${encodeURIComponent(e.title.slice(0, 20))}`;
 
 export const ManageEventPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs: Tab[] = ['overview', 'registrations', 'volunteers', 'announcements', 'settings'];
+  const validTabs: Tab[] = ['overview', 'registrations', 'announcements', 'settings'];
   const tabFromUrl = searchParams.get('tab') as Tab | null;
   const [tab, setTabState] = useState<Tab>(tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : 'overview');
 
@@ -39,22 +38,30 @@ export const ManageEventPage: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [settings, setSettings] = useState<EventSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [publishing, setPublishing] = useState(false);
+
+  const isDraft = (event?.status || '').toLowerCase() === 'draft';
 
   useEffect(() => {
     if (!id) return;
     (async () => {
       setLoading(true);
-      const [ev, la, ann, set] = await Promise.all([
-        organizerApi.getEventById(id),
-        organizerApi.getLiveAttendance(id),
-        organizerApi.getAnnouncements(),
-        organizerApi.getEventSettings(id),
-      ]);
-      setEvent(ev);
-      setLive(la);
-      setAnnouncements(ann.filter((a: Announcement) => a.eventId === id));
-      setSettings(set);
-      setLoading(false);
+      try {
+        const [ev, la, ann, set] = await Promise.all([
+          organizerApi.getEvent(id),
+          organizerApi.getLiveAttendance(id).catch(() => null),
+          organizerApi.getAnnouncements().catch(() => []),
+          organizerApi.getEventSettings(id).catch(() => null),
+        ]);
+        setEvent(ev);
+        setLive(la);
+        setAnnouncements(ann ? ann.filter((a: Announcement) => a.eventId === id) : []);
+        setSettings(set);
+      } catch (err) {
+        console.error("Failed to load event details", err);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [id]);
 
@@ -63,6 +70,25 @@ export const ManageEventPage: React.FC = () => {
   }
 
   const fillPct = Math.min(100, ((event.registrationsCount ?? 0) / event.capacity) * 100);
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return;
+    await organizerApi.deleteEvent(event.id);
+    navigate('/organizer/events');
+  };
+
+  const handlePublish = async () => {
+    if (!window.confirm(`Publish "${event.title}"? Students will be able to see and register for it.`)) return;
+    setPublishing(true);
+    try {
+      const updated = await organizerApi.publishEvent(event.id);
+      setEvent(updated);
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to publish event.');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -101,16 +127,25 @@ export const ManageEventPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap gap-2 p-4">
-          <button onClick={() => window.open(`/events/${event.id}`, '_blank')} className="flex items-center gap-2 border-2 border-on-background bg-surface px-3 py-2 font-label-bold uppercase text-xs hover-lift press-down">
+          <button onClick={() => window.open('/', '_blank')} className="flex items-center gap-2 border-2 border-on-background bg-surface px-3 py-2 font-label-bold uppercase text-xs hover-lift press-down">
             <Eye className="w-4 h-4 stroke-[3]" /> Public Page
           </button>
           <button onClick={() => navigate(`/organizer/events?edit=${event.id}`)} className="flex items-center gap-2 border-2 border-on-background bg-surface-variant px-3 py-2 font-label-bold uppercase text-xs hover-lift press-down">
             <Edit className="w-4 h-4 stroke-[3]" /> Edit
           </button>
+          {isDraft && (
+            <button
+              onClick={handlePublish}
+              disabled={publishing}
+              className="flex items-center gap-2 border-2 border-on-background bg-primary-fixed text-on-primary-fixed px-3 py-2 font-label-bold uppercase text-xs hover-lift press-down disabled:opacity-50"
+            >
+              <Send className="w-4 h-4 stroke-[3]" /> {publishing ? 'Publishing…' : 'Publish'}
+            </button>
+          )}
           <button className="flex items-center gap-2 border-2 border-on-background bg-tertiary-fixed px-3 py-2 font-label-bold uppercase text-xs hover-lift press-down">
             <Share2 className="w-4 h-4 stroke-[3]" /> Share
           </button>
-          <button className="ml-auto flex items-center gap-2 border-2 border-on-background bg-error-container text-on-error-container px-3 py-2 font-label-bold uppercase text-xs hover-lift press-down">
+          <button onClick={handleDelete} className="ml-auto flex items-center gap-2 border-2 border-on-background bg-error-container text-on-error-container px-3 py-2 font-label-bold uppercase text-xs hover-lift press-down">
             <Trash2 className="w-4 h-4 stroke-[3]" /> Delete
           </button>
         </div>
@@ -135,12 +170,20 @@ export const ManageEventPage: React.FC = () => {
       </div>
 
       <div className="bg-surface border-4 border-on-background p-6 neo-shadow">
-        {tab === 'overview' && live && (
+        {tab === 'overview' && (
           <div className="space-y-6">
-            <LiveAttendanceChart data={live} eventTitle={event.title} />
+            {live ? (
+              <LiveAttendanceChart data={live} eventTitle={event.title} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <QuickStat label="Registered" value={String(event.registrationsCount ?? 0)} />
+                <QuickStat label="Checked In" value={String(event.checkedInCount ?? 0)} />
+                <QuickStat label="Capacity" value={String(event.capacity)} />
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <QuickStat label="Status" value={event.status ?? 'draft'} />
-              <QuickStat label="Created by" value={event.organizer ?? 'You'} />
+              <QuickStat label="Organizer" value={event.organizer ?? 'You'} />
               <QuickStat label="Last updated" value={new Date(event.updatedAt ?? Date.now()).toLocaleDateString()} />
             </div>
           </div>
@@ -148,14 +191,13 @@ export const ManageEventPage: React.FC = () => {
 
         {tab === 'registrations' && <RegistrationTableLazy eventId={event.id} />}
 
-        {tab === 'volunteers' && <VolunteerAssignView eventId={event.id} />}
 
         {tab === 'announcements' && (
           <AnnouncementsTab eventId={event.id} announcements={announcements} setAnnouncements={setAnnouncements} />
         )}
 
         {tab === 'settings' && settings && (
-          <EventSettingsTab settings={settings} setSettings={setSettings} />
+          <EventSettingsTab settings={settings} setSettings={setSettings} eventId={event.id} />
         )}
       </div>
     </div>
@@ -174,7 +216,18 @@ const RegistrationTableLazy: React.FC<{ eventId: string }> = ({ eventId }) => {
     })();
   }, [eventId]);
   if (loading) return <div className="py-10 text-center font-label-bold uppercase">Loading…</div>;
-  return <RegistrationTable registrations={regs} loading={false} onCheckIn={async () => {}} />;
+  return (
+    <RegistrationTable
+      registrations={regs}
+      loading={false}
+      showEventColumn={false}
+      onCheckIn={async (ticketCode) => {
+        await organizerApi.checkInAttendee(ticketCode);
+        const updated = await organizerApi.getRegistrations({ eventId });
+        setRegs(updated);
+      }}
+    />
+  );
 };
 
 const QuickStat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
@@ -232,13 +285,13 @@ const AnnouncementsTab: React.FC<{ eventId: string; announcements: Announcement[
   );
 };
 
-const EventSettingsTab: React.FC<{ settings: EventSettings; setSettings: React.Dispatch<React.SetStateAction<EventSettings | null>> }> = ({ settings, setSettings }) => {
+const EventSettingsTab: React.FC<{ settings: EventSettings; setSettings: React.Dispatch<React.SetStateAction<EventSettings | null>>; eventId: string }> = ({ settings, setSettings, eventId }) => {
   const [saving, setSaving] = useState(false);
   const toggle = (k: keyof EventSettings) => setSettings((p) => p ? { ...p, [k]: !(p as any)[k] } : p);
 
   const save = async () => {
     setSaving(true);
-    await organizerApi.updateEventSettings(settings.eventId, settings);
+    await organizerApi.updateEventSettings(eventId, settings);
     setSaving(false);
   };
 

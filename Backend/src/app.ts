@@ -35,10 +35,17 @@ app.use(mongoSanitize());
 app.use(hpp());
 app.disable('x-powered-by');
 
-// CORS
+// CORS — allow any localhost port in development (Vite may use 5174 if 5173 is busy)
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (env.NODE_ENV === 'development' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+      if (origin === env.FRONTEND_URL) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   })
 );
@@ -46,9 +53,9 @@ app.use(
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per `window`
+  max: 1000, // Limit each IP to 1000 requests per `window` to allow frontend polling
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: false,/*  */
 });
 app.use('/api', limiter);
 
@@ -56,8 +63,8 @@ app.use('/api', limiter);
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Body parser
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Data sanitization against NoSQL query injection

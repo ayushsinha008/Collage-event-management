@@ -12,9 +12,21 @@ export const AnalyticsPage: React.FC = () => {
   const [range, setRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const { data, loading } = useAnalytics(range);
   const [live, setLive] = useState<LiveAttendanceData | null>(null);
+  const [liveEventTitle, setLiveEventTitle] = useState('');
 
   useEffect(() => {
-    (async () => setLive(await organizerApi.getLiveAttendance('1')))();
+    (async () => {
+      try {
+        const events = await organizerApi.getMyEvents();
+        const top = events.sort((a, b) => (b.registrationsCount ?? 0) - (a.registrationsCount ?? 0))[0];
+        if (!top?.id) return;
+        const attendance = await organizerApi.getLiveAttendance(top.id);
+        setLive(attendance);
+        setLiveEventTitle(top.title);
+      } catch {
+        setLive(null);
+      }
+    })();
   }, []);
 
   if (loading || !data) {
@@ -38,9 +50,8 @@ export const AnalyticsPage: React.FC = () => {
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`px-4 py-2 font-label-bold text-sm uppercase transition-all ${i !== 0 ? 'border-l-4 border-on-background' : ''} ${
-                range === r ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-transparent text-on-surface hover:bg-surface-variant'
-              }`}
+              className={`px-4 py-2 font-label-bold text-sm uppercase transition-all ${i !== 0 ? 'border-l-4 border-on-background' : ''} ${range === r ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-transparent text-on-surface hover:bg-surface-variant'
+                }`}
             >
               {r}
             </button>
@@ -49,7 +60,7 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       {/* LIVE ATTENDANCE — signature screen */}
-      {live && <LiveAttendanceChart data={live} eventTitle="NEON PULSE — Real-time Floor" />}
+      {live && <LiveAttendanceChart data={live} eventTitle={liveEventTitle || 'Top Event'} />}
 
       <MetricSummary
         metrics={[

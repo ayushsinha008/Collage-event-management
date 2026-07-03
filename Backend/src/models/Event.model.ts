@@ -16,7 +16,7 @@ export interface IEvent extends Document {
   bannerImage?: string;
   organizer: mongoose.Types.ObjectId; // Reference to User
   club?: mongoose.Types.ObjectId; // Reference to Club
-  status: 'Upcoming' | 'Ongoing' | 'Completed' | 'Cancelled';
+  status: 'Draft' | 'Upcoming' | 'Ongoing' | 'Completed' | 'Cancelled';
   tags: string[];
   isDeleted: boolean;
   deletedAt?: Date;
@@ -44,7 +44,7 @@ const eventSchema = new Schema<IEvent>(
     club: { type: Schema.Types.ObjectId, ref: 'Club' },
     status: {
       type: String,
-      enum: ['Upcoming', 'Ongoing', 'Completed', 'Cancelled'],
+      enum: ['Draft', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled'],
       default: 'Upcoming',
     },
     tags: [{ type: String }],
@@ -53,7 +53,11 @@ const eventSchema = new Schema<IEvent>(
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
 eventSchema.pre('save', function () {

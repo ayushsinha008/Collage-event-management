@@ -24,7 +24,6 @@ export const DashboardPage: React.FC = () => {
   }, []);
 
   if (loading) {
-    console.log('DashboardPage render - loading:', loading, 'stats:', stats, 'organizer:', organizer);
     return (
       <div className="py-20 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-on-background border-t-primary rounded-full animate-spin"></div>
@@ -46,13 +45,12 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 neo-shadow-sm p-4 bg-surface-variant border-4 border-on-background">
         <StatCard
           label="Total Events"
           value={stats?.totalEvents ?? 0}
           sub="All time"
           icon={CalendarRange}
-          trend={12}
           accent="yellow"
         />
         <StatCard
@@ -60,7 +58,6 @@ export const DashboardPage: React.FC = () => {
           value={stats?.activeEvents ?? 0}
           sub="Currently live"
           icon={Ticket}
-          trend={5}
           accent="green"
         />
         <StatCard
@@ -68,7 +65,6 @@ export const DashboardPage: React.FC = () => {
           value={stats?.totalRegistrations ?? 0}
           sub="Across all events"
           icon={Users}
-          trend={-2}
           accent="blue"
         />
         <StatCard
@@ -76,7 +72,6 @@ export const DashboardPage: React.FC = () => {
           value={stats?.thisWeekRegistrations ?? 0}
           sub="New registrations"
           icon={TrendingUp}
-          trend={18}
           accent="purple"
         />
       </div>

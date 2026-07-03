@@ -3,16 +3,36 @@ import { Event } from '../../types';
 interface TicketWalletProps {
   events: Event[];
   myTickets: string[];
+  ticketDetails?: any[];
   handleRegister: (event: Event) => void;
   setCurrentTab: (tab: 'dashboard' | 'events' | 'tickets') => void;
+  searchQuery: string;
 }
 
 export default function TicketWallet({
   events,
-  myTickets,
+  ticketDetails = [],
   handleRegister,
-  setCurrentTab
+  setCurrentTab,
+  searchQuery
 }: TicketWalletProps) {
+  
+  // Apply Search Filter to Ticket Wallet
+  const filteredTicketDetails = ticketDetails.filter((ticketDetail: any) => {
+    const eventId =
+      ticketDetail.registration?.event?._id ||
+      ticketDetail.registration?.event?.id ||
+      ticketDetail.registration?.event;
+    const event = events.find((e) => e.id === eventId);
+    
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const titleMatch = event?.title?.toLowerCase().includes(query) || ticketDetail.registration?.event?.title?.toLowerCase().includes(query);
+    const codeMatch = ticketDetail.ticketCode?.toLowerCase().includes(query);
+    
+    return titleMatch || codeMatch;
+  });
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-10 text-center md:text-left">
@@ -22,13 +42,25 @@ export default function TicketWallet({
         </p>
       </div>
 
-      {myTickets.length > 0 ? (
+      {filteredTicketDetails.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {myTickets.map(id => {
-            const event = events.find(e => e.id === id);
-            if (!event) return null;
+          {filteredTicketDetails.map((ticketDetail: any) => {
+            const eventId =
+              ticketDetail.registration?.event?._id ||
+              ticketDetail.registration?.event?.id ||
+              ticketDetail.registration?.event;
+            const event = events.find((e) => e.id === eventId) || {
+              title: ticketDetail.registration?.event?.title || 'Unknown Event',
+              date: 'TBD',
+              time: 'TBD',
+              location: 'TBD'
+            } as any;
+
+            const qrCodeUrl = ticketDetail.qrCodeDataUri || ticketDetail.qrCode;
+            const ticketCode = ticketDetail.ticketCode;
+
             return (
-              <div key={event.id} className="bg-white border-4 border-on-background neo-shadow ticket-edge flex flex-col">
+              <div key={ticketDetail._id || ticketCode} className="bg-white border-4 border-on-background neo-shadow ticket-edge flex flex-col">
                 <div className="p-6 border-b-2 border-dashed border-on-background flex justify-between items-center bg-[#dcd5fd]">
                   <span className="font-label-bold uppercase text-xs tracking-wider font-semibold text-slate-800">
                     CAMPUS VIP ENTRY PASS
@@ -53,15 +85,20 @@ export default function TicketWallet({
                   </div>
 
                   <div className="flex flex-col items-center border-t-2 border-on-background/10 pt-4 text-center">
-                    <div className="w-36 h-36 border-4 border-on-background p-2.5 bg-white mb-2 shadow-sm">
-                      {/* QR Image representation */}
-                      <span className="material-symbols-outlined text-[115px] leading-none select-none text-on-background">
-                        qr_code_2
-                      </span>
+                    <div className="w-36 h-36 border-4 border-on-background p-2.5 bg-white mb-2 shadow-sm flex items-center justify-center">
+                      {qrCodeUrl ? (
+                        <img src={qrCodeUrl} alt="Ticket QR Code" className="w-full h-full object-contain" />
+                      ) : (
+                        <span className="text-xs font-bold text-slate-400 uppercase text-center px-2">
+                          QR loading...
+                        </span>
+                      )}
                     </div>
-                    <span className="font-label-bold text-xs uppercase tracking-widest text-[#1b6b4f]">
-                      FFLOW-TKT-{event.id}
-                    </span>
+                    {ticketCode && (
+                      <span className="font-label-bold text-xs uppercase tracking-widest text-[#1b6b4f]">
+                        {ticketCode}
+                      </span>
+                    )}
                     <span className="text-[10px] text-slate-400 block mt-1 uppercase font-semibold">
                       SCANNER SECURE CODE
                     </span>

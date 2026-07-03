@@ -18,8 +18,10 @@ const connectDB = async () => {
   }
 };
 
-const seedData = async () => {
-  await connectDB();
+export const seedData = async (shouldConnect = true, shouldExit = true) => {
+  if (shouldConnect) {
+    await connectDB();
+  }
 
   try {
     // Clear existing data
@@ -84,11 +86,11 @@ const seedData = async () => {
         organizer: organizer._id,
         createdBy: admin._id,
         updatedBy: admin._id,
-        status: 'Upcoming',
+        status: 'Upcoming' as const,
       };
     });
 
-    const events = [];
+    const events: any[] = [];
     for (const eventData of eventsData) {
       const event = await Event.create(eventData);
       events.push(event);
@@ -115,7 +117,7 @@ const seedData = async () => {
     // Insert ignoring duplicates if any
     try {
       const insertedRegistrations = await Registration.insertMany(registrationsToCreate, { ordered: false });
-      
+
       // Update Event counts and generate tickets
       for (const reg of insertedRegistrations) {
         await Ticket.create({
@@ -134,11 +136,19 @@ const seedData = async () => {
     }
 
     logger.info(`Database seeded successfully! Created ${regCount} valid registrations/tickets.`);
-    process.exit(0);
+    if (shouldExit) {
+      process.exit(0);
+    }
   } catch (error) {
     logger.error('Seeding failed:', error);
-    process.exit(1);
+    if (shouldExit) {
+      process.exit(1);
+    } else {
+      throw error;
+    }
   }
 };
 
-seedData();
+if (require.main === module) {
+  seedData(true, true);
+}

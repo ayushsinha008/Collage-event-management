@@ -7,6 +7,7 @@ interface StudentDashboardProps {
   handleRegister: (event: Event) => void;
   setSelectedEvent: (event: Event) => void;
   setCurrentTab: (tab: 'dashboard' | 'events' | 'tickets') => void;
+  searchQuery: string;
 }
 
 export default function StudentDashboard({
@@ -14,16 +15,26 @@ export default function StudentDashboard({
   myTickets,
   handleRegister,
   setSelectedEvent,
-  setCurrentTab
+  setCurrentTab,
+  searchQuery
 }: StudentDashboardProps) {
   const { user } = useAuth();
   
   // Find registered events
   const registeredEvents = events.filter(e => myTickets.includes(e.id));
   
+  // Apply Search Filter to Recommendations
+  const matchesSearch = (e: Event) => 
+    !searchQuery.trim() || 
+    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.organizer.toLowerCase().includes(searchQuery.toLowerCase());
+
   // Find recommended events (events the user has NOT registered for yet)
   const recommendations = events
     .filter(e => !myTickets.includes(e.id))
+    .filter(matchesSearch)
     .slice(0, 3); // Pick first 3 as recommendations
 
   // Get next event details
@@ -91,6 +102,13 @@ export default function StudentDashboard({
                     NEXT UPCOMING EVENT
                   </span>
                   <span className="text-xs font-bold text-slate-500">{nextEvent.date}</span>
+                </div>
+                <div className="w-full h-32 md:h-40 border-4 border-on-background overflow-hidden mb-4 bg-slate-900">
+                  <img 
+                    src={nextEvent.imageUrl || `https://picsum.photos/seed/${nextEvent.id}/800/400`} 
+                    alt={nextEvent.title} 
+                    className="w-full h-full object-cover hover:scale-105 transition-transform"
+                  />
                 </div>
                 <h4 
                   onClick={() => setSelectedEvent(nextEvent)}

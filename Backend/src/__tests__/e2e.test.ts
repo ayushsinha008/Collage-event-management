@@ -29,7 +29,7 @@ beforeAll(async () => {
 
   // Pre-create admin user
   await User.create({
-    uid: 'admin_uid_456',
+    uid: 'mock-admin',
     email: 'admin@example.com',
     name: 'Admin User',
     role: Role.ADMIN

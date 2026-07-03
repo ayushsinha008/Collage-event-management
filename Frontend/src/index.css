@@ -3,15 +3,54 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --background: #f9f9f9;
+    --on-background: #1b1b1b;
+    --surface: #f9f9f9;
+    --on-surface: #1b1b1b;
+    --surface-container: #eeeeee;
+    --surface-container-low: #f3f3f3;
+    --surface-container-high: #e8e8e8;
+    --surface-container-highest: #e2e2e2;
+    --surface-variant: #e2e2e2;
+    --on-surface-variant: #3f4943;
+    --outline: #6f7973;
+    --outline-variant: #bec9c2;
+    --surface-dim: #dadada;
+    --surface-bright: #f9f9f9;
+    --inverse-surface: #303030;
+    --inverse-on-surface: #f1f1f1;
+  }
+
+  .dark {
+    --background: #121212;
+    --on-background: #f9f9f9;
+    --surface: #1a1a1a;
+    --on-surface: #f9f9f9;
+    --surface-container: #222222;
+    --surface-container-low: #181818;
+    --surface-container-high: #282828;
+    --surface-container-highest: #303030;
+    --surface-variant: #282828;
+    --on-surface-variant: #a0aba0;
+    --outline: #8f9993;
+    --outline-variant: #4a544f;
+    --surface-dim: #101010;
+    --surface-bright: #202020;
+    --inverse-surface: #f9f9f9;
+    --inverse-on-surface: #121212;
+  }
+
   body {
-    background-color: #f9f9f9;
-    color: #1b1b1b;
+    background-color: var(--background);
+    color: var(--on-background);
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   
   /* Smooth focus borders for input elements */
   input:focus, select:focus, textarea:focus {
     outline: none;
-    border-color: #1b1b1b;
+    border-color: var(--on-background);
   }
 }
 
@@ -51,3 +90,42 @@
               radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
   mask-size: 100% 100%;
 }
+
+/* Density overrides (Compact mode) */
+.density-compact .p-6,
+.density-compact .md\:p-margin-desktop {
+  padding: 1rem !important;
+}
+.density-compact .p-10,
+.density-compact .p-8 {
+  padding: 1.25rem !important;
+}
+.density-compact .py-4 {
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+.density-compact .py-3 {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+}
+.density-compact .px-6 {
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+}
+.density-compact .gap-6 {
+  gap: 0.75rem !important;
+}
+.density-compact .gap-4 {
+  gap: 0.5rem !important;
+}
+.density-compact .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.75rem !important;
+}
+.density-compact .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.5rem !important;
+}
+.density-compact table th,
+.density-compact table td {
+  padding: 0.5rem 0.75rem !important;
+}
+

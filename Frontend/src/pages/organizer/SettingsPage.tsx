@@ -1,24 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Bell, Palette, Lock, User, Check } from 'lucide-react';
+import { Save, Bell, Lock, User, Check } from 'lucide-react';
 import { organizerApi } from '../../services/organizerApi';
 import { OrganizerSettings } from '../../types/organizer';
+import { applyTheme, applyDensity } from '../../utils/theme';
 
-type Tab = 'account' | 'notifications' | 'appearance' | 'privacy';
+type Tab = 'account' | 'notifications' | 'privacy';
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'account',      label: 'Account',      icon: User },
   { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'appearance',   label: 'Appearance',   icon: Palette },
   { id: 'privacy',      label: 'Privacy',      icon: Lock },
 ];
-
-const ACCENTS = [
-  { id: 'green',  label: 'Green',  swatch: '#1b6b4f' },
-  { id: 'yellow', label: 'Yellow', swatch: '#ffe24c' },
-  { id: 'purple', label: 'Purple', swatch: '#5f5a7c' },
-  { id: 'pink',   label: 'Pink',   swatch: '#ba1a1a' },
-  { id: 'blue',   label: 'Blue',   swatch: '#1f3a93' },
-] as const;
 
 export const SettingsPage: React.FC = () => {
   const [tab, setTab] = useState<Tab>('account');
@@ -27,13 +19,20 @@ export const SettingsPage: React.FC = () => {
   const [savedFlash, setSavedFlash] = useState(false);
 
   useEffect(() => {
-    (async () => setSettings(await organizerApi.getOrganizerSettings()))();
+    (async () => {
+      const data = await organizerApi.getOrganizerSettings();
+      setSettings(data);
+      applyTheme(data.appearance.theme);
+      applyDensity(data.appearance.density);
+    })();
   }, []);
 
   const save = async () => {
     if (!settings) return;
     setSaving(true);
     await organizerApi.updateOrganizerSettings(settings);
+    applyTheme(settings.appearance.theme);
+    applyDensity(settings.appearance.density);
     setSaving(false);
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
@@ -102,51 +101,6 @@ export const SettingsPage: React.FC = () => {
             </div>
           )}
 
-          {tab === 'appearance' && (
-            <div className="space-y-6">
-              <SectionHeader title="Appearance" sub="Make FestFlow feel like yours." />
-
-              <div>
-                <Label>Theme</Label>
-                <div className="grid grid-cols-3 gap-3">
-                  {(['light', 'dark', 'system'] as const).map((t) => (
-                    <button key={t} onClick={() => setSettings({ ...settings, appearance: { ...settings.appearance, theme: t } })} className={`border-4 border-on-background py-4 font-extrabold uppercase transition-all ${settings.appearance.theme === t ? `${t === 'dark' ? 'bg-on-background text-on-primary' : 'bg-tertiary-fixed'} neo-shadow-sm -translate-y-0.5` : 'bg-surface'}`}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label>Accent Color</Label>
-                <div className="flex gap-3 flex-wrap">
-                  {ACCENTS.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() => setSettings({ ...settings, appearance: { ...settings.appearance, accent: a.id } })}
-                      className={`flex items-center gap-2 border-4 border-on-background px-3 py-2 font-label-bold uppercase text-xs transition-all ${settings.appearance.accent === a.id ? 'neo-shadow-sm -translate-y-0.5' : ''}`}
-                    >
-                      <span className="w-5 h-5 border-2 border-on-background" style={{ background: a.swatch }} />
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label>Density</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {(['comfortable', 'compact'] as const).map((d) => (
-                    <button key={d} onClick={() => setSettings({ ...settings, appearance: { ...settings.appearance, density: d } })} className={`border-4 border-on-background py-4 font-extrabold uppercase transition-all ${settings.appearance.density === d ? 'bg-tertiary-fixed neo-shadow-sm -translate-y-0.5' : 'bg-surface'}`}>
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <ToggleRow label="Reduce Motion" desc="Disable transitions and parallax effects." value={settings.appearance.reducedMotion} onChange={(v) => setSettings({ ...settings, appearance: { ...settings.appearance, reducedMotion: v } })} />
-            </div>
-          )}
 
           {tab === 'privacy' && (
             <div className="space-y-4">
@@ -174,9 +128,7 @@ const SectionHeader: React.FC<{ title: string; sub: string }> = ({ title, sub })
   </div>
 );
 
-const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <label className="block text-[11px] font-extrabold uppercase tracking-widest mb-2">{children}</label>
-);
+
 
 const Grid: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>

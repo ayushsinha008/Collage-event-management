@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useOrganizerContext } from '../../context/OrganizerContext';
+import { organizerApi } from '../../services/organizerApi';
 import { Save } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
@@ -10,20 +11,17 @@ export const ProfilePage: React.FC = () => {
     email: organizer?.email ?? '',
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/organizer/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('organizer_token')}`,
-        },
-        body: JSON.stringify(form),
-      });
+      await organizerApi.updateProfile(form);
       await refreshProfile();
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Failed to save profile');
     } finally {
       setSaving(false);
     }
@@ -62,6 +60,10 @@ export const ProfilePage: React.FC = () => {
             className="w-full border-4 border-on-background bg-background px-4 py-3 font-label-bold text-sm uppercase focus:outline-none focus:neo-shadow-sm transition-shadow"
           />
         </div>
+
+        {error && (
+          <p className="text-sm font-label-bold text-error uppercase">{error}</p>
+        )}
 
         <button
           disabled={saving}

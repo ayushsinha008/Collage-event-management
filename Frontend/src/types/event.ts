@@ -19,4 +19,5 @@ export interface Event {
   revenue?: number;
   registrationsCount?: number;
   rsvps?: number;
+  checkedInCount?: number;
 }

@@ -7,6 +7,7 @@ import { AuthUser, RegistrationStatus, TicketStatus, Role } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { generateQRCode } from './qr.service';
 import { APIFeatures } from '../utils/apiFeatures';
+import { OrganizerService } from './organizer.service';
 
 export class RegistrationService {
   static async registerForEvent(eventId: string, user: AuthUser) {
@@ -65,21 +66,30 @@ export class RegistrationService {
       // Generate Ticket
       const ticketCode = `TKT-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString().slice(-4)}`;
       const qrToken = uuidv4();
-      
-      // We only encode the qrToken in the QR code for security
       const qrCodeDataUri = await generateQRCode(qrToken);
 
-      const ticket = await Ticket.create(
-        [
-          {
-            registration: registration._id,
-            ticketCode,
-            qrToken,
-            status: TicketStatus.ACTIVE,
-          },
-        ],
-        { session }
-      );
+      let ticket;
+      const existingTicket = await Ticket.findOne({ registration: registration._id }).session(session);
+      
+      if (existingTicket) {
+        existingTicket.ticketCode = ticketCode;
+        existingTicket.qrToken = qrToken;
+        existingTicket.status = TicketStatus.ACTIVE;
+        ticket = await existingTicket.save({ session });
+      } else {
+        const createdTickets = await Ticket.create(
+          [
+            {
+              registration: registration._id,
+              ticketCode,
+              qrToken,
+              status: TicketStatus.ACTIVE,
+            },
+          ],
+          { session }
+        );
+        ticket = createdTickets[0];
+      }
 
       // Update Event Registration Count
       event.registrationCount += 1;
@@ -88,7 +98,19 @@ export class RegistrationService {
       await session.commitTransaction();
       session.endSession();
 
-      return { registration, ticket: ticket[0], qrCode: qrCodeDataUri };
+      // Create Notification for the organizer
+      try {
+        await OrganizerService.createNotification(
+          event.organizer.toString(),
+          'New Registration',
+          `Student "${user.email}" has registered for event "${event.title}".`,
+          'REGISTRATION'
+        );
+      } catch (err) {
+        console.error('Failed to create registration notification:', err);
+      }
+
+      return { registration, ticket, qrCode: qrCodeDataUri };
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
@@ -152,12 +174,17 @@ export class RegistrationService {
   }
 
   static async getUserTickets(userId: string, queryString: any) {
-    // Find registrations first
-    const registrations = await Registration.find({ user: userId }).select('_id');
+    const registrations = await Registration.find({
+      user: userId,
+      status: RegistrationStatus.CONFIRMED,
+    }).select('_id');
     const registrationIds = registrations.map((r) => r._id);
 
     const features = new APIFeatures(
-      Ticket.find({ registration: { $in: registrationIds } }).populate({
+      Ticket.find({
+        registration: { $in: registrationIds },
+        status: TicketStatus.ACTIVE,
+      }).populate({
         path: 'registration',
         populate: { path: 'event' },
       }),
@@ -167,7 +194,18 @@ export class RegistrationService {
       .paginate();
 
     const tickets = await features.query;
-    return tickets;
+    
+    // Generate QR code data URI for each ticket
+    const ticketsWithQR = await Promise.all(tickets.map(async (ticket: any) => {
+      const ticketObj = ticket.toObject();
+      ticketObj.qrCodeDataUri = await generateQRCode(ticket.qrToken);
+      return ticketObj;
+    }));
+
+    return ticketsWithQR.filter((ticket: any) => {
+      const event = ticket.registration?.event;
+      return event && !event.isDeleted;
+    });
   }
 
   static async getTicketById(ticketId: string, user: AuthUser) {

@@ -11,14 +11,12 @@ import {
   Zap,
   Settings,
   ClipboardList,
-  HeartHandshake,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/organizer/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
   { to: '/organizer/events',        label: 'My Events',     icon: CalendarRange },
   { to: '/organizer/registrations', label: 'Registrations', icon: Users },
-  { to: '/organizer/volunteers',    label: 'Volunteers',    icon: HeartHandshake },
   { to: '/organizer/analytics',     label: 'Analytics',     icon: BarChart3 },
   { to: '/organizer/announcements', label: 'Announcements', icon: Megaphone },
   { to: '/organizer/settings',      label: 'Settings',      icon: Settings },
@@ -80,23 +78,7 @@ export const OrganizerSidebar: React.FC<Props> = ({ onClose }) => {
         >
           <ClipboardList className="w-4 h-4 stroke-[3]" /> MANAGE ALL
         </button>
-        <button
-          onClick={() => {
-            const savedUser = localStorage.getItem('auth_user');
-            let parsed = null;
-            try {
-              parsed = savedUser ? JSON.parse(savedUser) : null;
-            } catch (e) {}
-            if (parsed && parsed.role === 'student') {
-              navigate('/');
-            } else {
-              navigate('/login');
-            }
-          }}
-          className="mt-3 w-full bg-[#e5deff] border-4 border-on-background hover:bg-[#ffe24c] font-label-bold py-2 px-4 flex items-center justify-center gap-2"
-        >
-          STUDENT PANEL →
-        </button>
+
         <div className="mt-4 flex items-center justify-center gap-2 text-sm font-label-bold text-on-surface-variant">
           <span className="w-3 h-3 bg-[#a6f2cf] border-2 border-on-background rounded-full" />
           SYSTEM: ONLINE

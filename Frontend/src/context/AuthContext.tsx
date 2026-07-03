@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { auth, googleProvider } from '../services/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { studentApi } from '../services/studentApi';
+import { mapBackendRole } from '../utils/authToken';
 
 export interface User {
   id: string;
@@ -16,172 +18,196 @@ interface AuthContextType {
   login: (email: string, password: string, role: 'student' | 'organizer' | 'volunteer') => Promise<User>;
   signInWithGoogle: () => Promise<User>;
   logout: () => Promise<void>;
-  updatePfp: (url: string) => void;
+  updatePfp: (url: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const STAFF_PASSWORDS = {
+  organizer: '1292',
+  volunteer: '1293',
+} as const;
+
+const buildUserFromProfile = (profile: any, firebaseUid: string): User => ({
+  id: profile._id || firebaseUid,
+  name: profile.name || 'FestFlow User',
+  email: profile.email || '',
+  role: mapBackendRole(profile.role || 'Student'),
+  photoURL: profile.photoURL || undefined,
+});
+
+const buildLocalStaffUser = (role: 'organizer' | 'volunteer'): User => ({
+  id: role === 'organizer' ? 'organizer-1' : 'volunteer-1',
+  name: role === 'organizer' ? 'FestFlow Organizer' : 'FestFlow Volunteer',
+  email: `${role}@univ.edu`,
+  role,
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Synchronize with Firebase Auth State & localStorage
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        // Firebase user authenticated
-        // Check if there is already a custom photoURL stored locally for this user
-        const savedUserRaw = localStorage.getItem('auth_user');
-        let customPhotoURL = firebaseUser.photoURL || undefined;
-        if (savedUserRaw) {
-          try {
-            const parsed = JSON.parse(savedUserRaw);
-            if (parsed.id === firebaseUser.uid && parsed.photoURL) {
-              customPhotoURL = parsed.photoURL;
-            }
-          } catch (e) {}
-        }
+  const syncUserFromBackend = useCallback(async (firebaseUid: string): Promise<User | null> => {
+    try {
+      const profile = await studentApi.getProfile();
+      const loggedInUser = buildUserFromProfile(profile, firebaseUid);
+      localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
+      setUser(loggedInUser);
+      return loggedInUser;
+    } catch (err) {
+      console.error('Failed to sync user profile from backend:', err);
+      return null;
+    }
+  }, []);
 
-        const loggedInUser: User = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'FestFlow Student',
-          email: firebaseUser.email || '',
-          role: 'student',
-          photoURL: customPhotoURL || undefined
-        };
-        localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
-        setUser(loggedInUser);
+  useEffect(() => {
+    const loadingTimeout = window.setTimeout(() => {
+      setLoading(false);
+    }, 8000);
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const savedUserRaw = localStorage.getItem('auth_user');
+      let savedUser: User | null = null;
+      if (savedUserRaw) {
+        try {
+          savedUser = JSON.parse(savedUserRaw) as User;
+        } catch {
+          savedUser = null;
+        }
+      }
+
+      const isStaffSession =
+        savedUser?.role === 'organizer' || savedUser?.role === 'volunteer';
+
+      if (firebaseUser && !isStaffSession) {
+        const token = await firebaseUser.getIdToken();
+        localStorage.setItem('auth_token', token);
+
+        const profile = await syncUserFromBackend(firebaseUser.uid);
+        if (!profile) {
+          const saved = localStorage.getItem('auth_user');
+          if (saved) {
+            try {
+              setUser(JSON.parse(saved));
+            } catch {
+              setUser({
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName || 'FestFlow User',
+                email: firebaseUser.email || '',
+                role: 'student',
+                photoURL: firebaseUser.photoURL || undefined,
+              });
+            }
+          }
+        }
+      } else if (isStaffSession && savedUser) {
+        setUser(savedUser);
       } else {
-        // Check if there is an organizer or volunteer logged in locally
-        const savedUser = localStorage.getItem('auth_user');
-        if (savedUser) {
+        const saved = localStorage.getItem('auth_user');
+        if (saved) {
           try {
-            const parsed = JSON.parse(savedUser);
+            const parsed = JSON.parse(saved) as User;
             if (parsed.role === 'organizer' || parsed.role === 'volunteer') {
               setUser(parsed);
               setLoading(false);
-              return; // Do not clear organizer or volunteer session
+              return;
             }
-          } catch (e) {}
+          } catch {
+            // ignore
+          }
         }
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
         setUser(null);
       }
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => {
+      window.clearTimeout(loadingTimeout);
+      unsubscribe();
+    };
+  }, [syncUserFromBackend]);
 
   const signInWithGoogle = async (): Promise<User> => {
+    const result = await signInWithPopup(auth, googleProvider);
+    const token = await result.user.getIdToken();
+    localStorage.setItem('auth_token', token);
+
+    const profile = await studentApi.getProfile();
+    const loggedInUser = buildUserFromProfile(profile, result.user.uid);
+    localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
+    setUser(loggedInUser);
+    return loggedInUser;
+  };
+
+  const completeStaffSession = async (profile: any, role: 'organizer' | 'volunteer') => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const loggedInUser: User = {
-        id: result.user.uid,
-        name: result.user.displayName || 'FestFlow Student',
-        email: result.user.email || '',
-        role: 'student',
-        photoURL: result.user.photoURL || undefined
-      };
-      localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
-      setUser(loggedInUser);
-      return loggedInUser;
-    } catch (err: any) {
-      throw new Error(err.message || 'Google Auth Popup closed or failed.');
+      await signOut(auth);
+    } catch {
+      // ignore if no firebase session
+    }
+
+    const staffToken = `festflow-staff-${role}`;
+    const loggedInUser = profile?.uid
+      ? buildUserFromProfile(profile, profile.uid)
+      : buildLocalStaffUser(role);
+
+    localStorage.setItem('auth_token', staffToken);
+    localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
+    setUser(loggedInUser);
+    return loggedInUser;
+  };
+
+  const staffLogin = async (
+    passcode: string,
+    role: 'organizer' | 'volunteer'
+  ): Promise<User> => {
+    try {
+      const { user: profile } = await studentApi.staffLogin(passcode, role);
+      return await completeStaffSession(profile, role);
+    } catch (err) {
+      console.warn('Staff login via API failed, using local session.', err);
+      return await completeStaffSession(null, role);
     }
   };
 
   const login = async (
-    email: string,
+    _email: string,
     password: string,
     role: 'student' | 'organizer' | 'volunteer'
   ): Promise<User> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const cleanEmail = email.toLowerCase().trim();
+    if (role === 'student') {
+      throw new Error('Students must sign in with Google.');
+    }
 
-        if (role === 'student') {
-          return reject(new Error('Please use Google Sign-In for Student access.'));
-        }
+    if (password !== STAFF_PASSWORDS[role]) {
+      throw new Error(`INVALID ${role.toUpperCase()} PASSCODE.`);
+    }
 
-        if (role === 'organizer') {
-          if (password !== '1292') {
-            return reject(new Error('INVALID ORGANIZER PASSCODE.'));
-          }
-
-          // Check if there is a cached custom PFP for the organizer
-          const savedUserRaw = localStorage.getItem('auth_user');
-          let customPhotoURL = undefined;
-          if (savedUserRaw) {
-            try {
-              const parsed = JSON.parse(savedUserRaw);
-              if (parsed.role === 'organizer' && parsed.photoURL) {
-                customPhotoURL = parsed.photoURL;
-              }
-            } catch (e) {}
-          }
-
-          const loggedInUser: User = {
-            id: 'organizer-1',
-            name: 'FestFlow Organizer',
-            email: cleanEmail,
-            role: 'organizer',
-            photoURL: customPhotoURL
-          };
-          localStorage.setItem('organizer_token', 'mock-organizer-token');
-          localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
-          setUser(loggedInUser);
-          return resolve(loggedInUser);
-        }
-
-        if (role === 'volunteer') {
-          if (password !== '1293') {
-            return reject(new Error('INVALID VOLUNTEER PASSCODE.'));
-          }
-
-          // Check if there is a cached custom PFP for the volunteer
-          const savedUserRaw = localStorage.getItem('auth_user');
-          let customPhotoURL = undefined;
-          if (savedUserRaw) {
-            try {
-              const parsed = JSON.parse(savedUserRaw);
-              if (parsed.role === 'volunteer' && parsed.photoURL) {
-                customPhotoURL = parsed.photoURL;
-              }
-            } catch (e) {}
-          }
-
-          const loggedInUser: User = {
-            id: 'volunteer-1',
-            name: 'FestFlow Volunteer',
-            email: cleanEmail,
-            role: 'volunteer',
-            photoURL: customPhotoURL
-          };
-          localStorage.setItem('volunteer_authenticated', 'true');
-          localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
-          setUser(loggedInUser);
-          return resolve(loggedInUser);
-        }
-
-        reject(new Error('Invalid role specified.'));
-      }, 500);
-    });
+    return staffLogin(password, role);
   };
 
-  const updatePfp = (url: string) => {
-    setUser((prev) => {
-      if (!prev) return null;
-      const updated = { ...prev, photoURL: url };
-      localStorage.setItem('auth_user', JSON.stringify(updated));
-      return updated;
-    });
+  const updatePfp = async (base64String: string) => {
+    try {
+      const profile = await studentApi.updateProfile({ avatarBase64: base64String });
+      setUser((prev) => {
+        if (!prev) return null;
+        const updated = { ...prev, photoURL: profile.photoURL };
+        localStorage.setItem('auth_user', JSON.stringify(updated));
+        return updated;
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating profile picture:', error);
+      return false;
+    }
   };
 
   const logout = async () => {
     await signOut(auth);
     localStorage.removeItem('auth_user');
-    localStorage.removeItem('organizer_token');
-    localStorage.removeItem('volunteer_authenticated');
+    localStorage.removeItem('auth_token');
     setUser(null);
   };
 

@@ -12,6 +12,14 @@ export const createEventSchema = z.object({
     capacity: z.number().int().min(1),
     tags: z.array(z.string()).optional(),
     club: z.string().optional(), // ObjectId as string
+    status: z.enum(['Draft', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled']).optional(),
+    bannerImage: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || val.length === 0 || val.startsWith('http') || val.startsWith('data:image/'),
+        'bannerImage must be a URL or base64 image'
+      ),
   }),
 });
 
@@ -26,6 +34,13 @@ export const updateEventSchema = z.object({
     endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Must be HH:MM format").optional(),
     capacity: z.number().int().min(1).optional(),
     tags: z.array(z.string()).optional(),
-    status: z.enum(['Upcoming', 'Ongoing', 'Completed', 'Cancelled']).optional(),
+    status: z.enum(['Draft', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled']).optional(),
+    bannerImage: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || val.length === 0 || val.startsWith('http') || val.startsWith('data:image/'),
+        'bannerImage must be a URL or base64 image'
+      ),
   }),
 });

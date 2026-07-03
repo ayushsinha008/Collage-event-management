@@ -31,13 +31,14 @@ const eventFromForm = (form: HTMLFormElement): Omit<Event, 'id'> => {
     capacity:    Number(fd.get('capacity') ?? 100),
     category:    (fd.get('category') as Event['category']) ?? 'technical',
     imageUrl:    String(fd.get('imageUrl') ?? ''),
+    status:      'Upcoming' as any, // backend accepts status values and UI maps published/Upcoming
   };
 };
 
 export const MyEventsPage: React.FC = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { events, loading, filters, setFilters, create, update, remove } = useOrganizerEvents();
+  const { events, loading, error, filters, setFilters, create, update, remove, publish } = useOrganizerEvents();
   const [editing, setEditing] = useState<Event | null>(null);
   const [showCreate, setShowCreate] = useState(params.get('create') === 'true');
 
@@ -101,7 +102,7 @@ export const MyEventsPage: React.FC = () => {
       ) : events.length === 0 ? (
         <div className="bg-surface border-4 border-on-background p-12 text-center neo-shadow">
           <p className="text-lg font-label-bold text-on-surface-variant uppercase tracking-wide">
-            No events yet. Create your first event!
+            {error ? `ERROR: ${typeof error === 'object' ? JSON.stringify(error) : error}` : 'No events yet. Create your first event!'}
           </p>
         </div>
       ) : (
@@ -113,6 +114,7 @@ export const MyEventsPage: React.FC = () => {
               onEdit={(ev) => setEditing(ev)}
               onView={(ev) => navigate(`/organizer/events/${ev.id}`)}
               onDelete={(id) => remove(id)}
+              onPublish={(ev) => publish(ev.id)}
             />
           ))}
         </div>

@@ -24,7 +24,7 @@ export const useOrganizerEvents = (initialFilters: EventFilters = {}) => {
       setEvents(data);
       setError(null);
     } catch (e: any) {
-      setError(e.message);
+      setError(e.response?.data?.message || e.message);
     } finally {
       setLoading(false);
     }
@@ -59,5 +59,13 @@ export const useOrganizerEvents = (initialFilters: EventFilters = {}) => {
     [fetch]
   );
 
-  return { events, loading, error, filters, setFilters, refetch: fetch, create, update, remove };
+  const publish = useCallback(
+    async (id: string) => {
+      await organizerApi.publishEvent(id);
+      await fetch();
+    },
+    [fetch]
+  );
+
+  return { events, loading, error, filters, setFilters, refetch: fetch, create, update, remove, publish };
 };

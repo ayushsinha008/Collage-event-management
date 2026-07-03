@@ -11,7 +11,7 @@ export const useRegistrations = (eventId?: string) => {
     setLoading(true);
     try {
       const data = await organizerApi.getRegistrations({ eventId, search });
-      setRegistrations(data);
+      setRegistrations(data as Registration[]);
     } catch (e) {
       console.error(e);
     } finally {

@@ -35,10 +35,10 @@ export const EventFilters: React.FC<Props> = ({ search, setSearch, status, setSt
           className="px-3 py-2 font-label-bold text-sm bg-transparent uppercase outline-none appearance-none cursor-pointer pr-8"
         >
           <option value="all">ALL STATUS</option>
-          <option value="draft">DRAFT</option>
-          <option value="published">PUBLISHED</option>
-          <option value="live">LIVE</option>
-          <option value="completed">COMPLETED</option>
+          <option value="Draft">DRAFT</option>
+          <option value="Upcoming">PUBLISHED / UPCOMING</option>
+          <option value="Ongoing">LIVE / ONGOING</option>
+          <option value="Completed">COMPLETED</option>
         </select>
       </div>
 
