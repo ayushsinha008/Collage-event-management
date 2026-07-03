@@ -2,11 +2,26 @@ import { Event, IEvent } from '../models/Event.model';
 import { ApiError } from '../utils/ApiError';
 import { APIFeatures } from '../utils/apiFeatures';
 import { AuthUser, Role } from '../types';
+import { uploadImage } from './cloudinary.service';
+
+const isBase64Image = (value: string) =>
+  value.startsWith('data:image/') || (!value.startsWith('http') && value.length > 100);
+
+const resolveBannerImage = async (bannerImage?: string): Promise<string | undefined> => {
+  if (!bannerImage) return undefined;
+  if (isBase64Image(bannerImage)) {
+    return uploadImage(bannerImage, 'events');
+  }
+  if (bannerImage.startsWith('http') && !bannerImage.includes('res.cloudinary.com')) {
+    return uploadImage(bannerImage, 'events');
+  }
+  return bannerImage;
+};
 
 export class EventService {
   static async getEvents(queryString: any): Promise<{ events: IEvent[]; total: number }> {
     // Only return non-deleted events and exclude Drafts
-    let filter = { isDeleted: false, status: { $ne: 'Draft' } };
+    let filter: Record<string, unknown> = { isDeleted: false, status: { $ne: 'Draft' } };
     const features = new APIFeatures(Event.find(filter).populate('organizer', 'name email'), queryString)
       .filter()
       .search(['title', 'description', 'category', 'venue', 'tags'])
@@ -29,8 +44,10 @@ export class EventService {
   }
 
   static async createEvent(data: any, user: AuthUser): Promise<IEvent> {
+    const bannerImage = await resolveBannerImage(data.bannerImage);
     const event = await Event.create({
       ...data,
+      bannerImage,
       organizer: user._id,
       createdBy: user._id,
       updatedBy: user._id,
@@ -48,6 +65,10 @@ export class EventService {
     // Only Admin or the Event Organizer can update
     if (user.role !== Role.ADMIN && event.organizer.toString() !== user._id) {
       throw new ApiError(403, 'You do not have permission to update this event');
+    }
+
+    if (data.bannerImage) {
+      data.bannerImage = await resolveBannerImage(data.bannerImage);
     }
 
     Object.assign(event, data);

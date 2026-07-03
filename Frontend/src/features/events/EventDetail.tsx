@@ -32,11 +32,17 @@ export default function EventDetail({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div className="border-4 border-on-background overflow-hidden h-64 md:h-80 bg-slate-100">
-          <img 
-            src={event.imageUrl || `https://picsum.photos/seed/${event.id}/800/400`} 
-            alt={event.title} 
-            className="w-full h-full object-cover"
-          />
+          {event.imageUrl ? (
+            <img
+              src={event.imageUrl}
+              alt={event.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-slate-200">
+              <span className="material-symbols-outlined text-6xl text-slate-400">image</span>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col justify-between space-y-6">
@@ -68,13 +74,13 @@ export default function EventDetail({
 
           <div>
             <div className="flex justify-between items-center text-xs font-bold uppercase mb-2">
-              <span>RSVP LIMIT: {event.rsvps} / {event.capacity}</span>
-              <span>{Math.round((event.rsvps / event.capacity) * 100)}% Full</span>
+              <span>RSVP LIMIT: {event.rsvps ?? 0} / {event.capacity}</span>
+              <span>{Math.round(((event.rsvps ?? 0) / event.capacity) * 100)}% Full</span>
             </div>
             <div className="w-full bg-[#eeeeee] border-2 border-on-background h-4 overflow-hidden mb-6">
               <div 
                 className="bg-primary h-full border-r-2 border-on-background" 
-                style={{ width: `${Math.min((event.rsvps / event.capacity) * 100, 100)}%` }}
+                style={{ width: `${Math.min(((event.rsvps ?? 0) / event.capacity) * 100, 100)}%` }}
               ></div>
             </div>
 

@@ -10,7 +10,6 @@ interface TicketWalletProps {
 
 export default function TicketWallet({
   events,
-  myTickets,
   ticketDetails = [],
   handleRegister,
   setCurrentTab
@@ -24,24 +23,21 @@ export default function TicketWallet({
         </p>
       </div>
 
-      {myTickets.length > 0 ? (
+      {ticketDetails.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {myTickets.map(id => {
-            const event = events.find(e => e.id === id);
+          {ticketDetails.map((ticketDetail: any) => {
+            const eventId =
+              ticketDetail.registration?.event?._id ||
+              ticketDetail.registration?.event?.id ||
+              ticketDetail.registration?.event;
+            const event = events.find((e) => e.id === eventId);
             if (!event) return null;
-            
-            // Find corresponding ticket detail
-            const ticketDetail = ticketDetails.find(t => 
-              t.registration?.event?._id === id || 
-              t.registration?.event?.id === id || 
-              t.registration?.event === id
-            );
-            
-            const qrCodeUrl = ticketDetail?.qrCodeDataUri || ticketDetail?.qrCode;
-            const ticketCode = ticketDetail?.ticketCode || `FFLOW-TKT-${event.id.toUpperCase().substring(0,6)}`;
+
+            const qrCodeUrl = ticketDetail.qrCodeDataUri || ticketDetail.qrCode;
+            const ticketCode = ticketDetail.ticketCode;
 
             return (
-              <div key={event.id} className="bg-white border-4 border-on-background neo-shadow ticket-edge flex flex-col">
+              <div key={ticketDetail._id || ticketCode} className="bg-white border-4 border-on-background neo-shadow ticket-edge flex flex-col">
                 <div className="p-6 border-b-2 border-dashed border-on-background flex justify-between items-center bg-[#dcd5fd]">
                   <span className="font-label-bold uppercase text-xs tracking-wider font-semibold text-slate-800">
                     CAMPUS VIP ENTRY PASS
@@ -70,14 +66,16 @@ export default function TicketWallet({
                       {qrCodeUrl ? (
                         <img src={qrCodeUrl} alt="Ticket QR Code" className="w-full h-full object-contain" />
                       ) : (
-                        <span className="material-symbols-outlined text-[115px] leading-none select-none text-on-background">
-                          qr_code_2
+                        <span className="text-xs font-bold text-slate-400 uppercase text-center px-2">
+                          QR loading...
                         </span>
                       )}
                     </div>
-                    <span className="font-label-bold text-xs uppercase tracking-widest text-[#1b6b4f]">
-                      {ticketCode}
-                    </span>
+                    {ticketCode && (
+                      <span className="font-label-bold text-xs uppercase tracking-widest text-[#1b6b4f]">
+                        {ticketCode}
+                      </span>
+                    )}
                     <span className="text-[10px] text-slate-400 block mt-1 uppercase font-semibold">
                       SCANNER SECURE CODE
                     </span>

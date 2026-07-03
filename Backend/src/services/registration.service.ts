@@ -161,12 +161,17 @@ export class RegistrationService {
   }
 
   static async getUserTickets(userId: string, queryString: any) {
-    // Find registrations first
-    const registrations = await Registration.find({ user: userId }).select('_id');
+    const registrations = await Registration.find({
+      user: userId,
+      status: RegistrationStatus.CONFIRMED,
+    }).select('_id');
     const registrationIds = registrations.map((r) => r._id);
 
     const features = new APIFeatures(
-      Ticket.find({ registration: { $in: registrationIds } }).populate({
+      Ticket.find({
+        registration: { $in: registrationIds },
+        status: TicketStatus.ACTIVE,
+      }).populate({
         path: 'registration',
         populate: { path: 'event' },
       }),

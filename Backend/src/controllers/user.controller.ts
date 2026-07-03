@@ -22,6 +22,7 @@ export class UserController {
 
   static async getUserTickets(req: AuthRequest, res: Response) {
     const tickets = await RegistrationService.getUserTickets(req.user!._id, req.query);
+    console.log('SENDING TICKETS:', JSON.stringify(tickets, null, 2));
     sendSuccess(req, res, 200, 'User tickets fetched successfully', tickets);
   }
 }

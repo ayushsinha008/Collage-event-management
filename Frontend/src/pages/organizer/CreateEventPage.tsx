@@ -14,15 +14,6 @@ const CATEGORIES: { value: Event['category']; label: string; color: string }[] =
   { value: 'other',     label: 'Other',     color: 'bg-surface-variant' },
 ];
 
-const PRESET_IMAGES = [
-  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
-];
-
 type PublishMode = 'draft' | 'published';
 
 export const CreateEventPage: React.FC = () => {
@@ -38,7 +29,7 @@ export const CreateEventPage: React.FC = () => {
     organizer: '',
     capacity: 100,
     category: 'TECHNICAL',
-    imageUrl: PRESET_IMAGES[0],
+    imageUrl: '',
     status: 'draft',
   });
 
@@ -77,7 +68,7 @@ export const CreateEventPage: React.FC = () => {
         status: mode === 'draft' ? 'Draft' : 'Upcoming',
       };
       
-      const created = await organizerApi.createEvent(payload);
+      await organizerApi.createEvent(payload);
       navigate('/organizer/events');
     } catch (err: any) {
       console.error("Create Event Error:", err.response?.data || err);
@@ -239,35 +230,40 @@ export const CreateEventPage: React.FC = () => {
             </div>
 
             <FieldRow label="Cover Image" icon={ImageIcon}>
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-3">
-                {PRESET_IMAGES.map((url) => (
-                  <button
-                    key={url}
-                    onClick={() => set('imageUrl', url)}
-                    className={`relative h-20 border-4 border-on-background overflow-hidden ${
-                      form.imageUrl === url ? 'ring-4 ring-tertiary-fixed' : ''
-                    }`}
-                  >
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
+              <div className="mb-3">
+                <label className="flex items-center gap-3 border-4 border-on-background bg-background px-4 py-3 cursor-pointer hover:bg-surface-variant transition-colors">
+                  <Upload className="w-5 h-5 stroke-[2.5]" />
+                  <span className="font-label-bold uppercase text-sm">Upload image (saved to Cloudinary)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) {
+                        alert('Image must be under 5MB');
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onloadend = () => set('imageUrl', reader.result as string);
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
               </div>
-              <div className="flex items-center gap-3 border-4 border-on-background bg-background px-3 py-2">
-                <Upload className="w-5 h-5 stroke-[2.5]" />
-                <input
-                  value={form.imageUrl}
-                  onChange={(e) => set('imageUrl', e.target.value)}
-                  placeholder="...or paste an image URL"
-                  className="flex-1 bg-transparent focus:outline-none text-sm font-label-bold"
-                />
-              </div>
+              {form.imageUrl && (
+                <div className="relative h-32 border-4 border-on-background overflow-hidden mb-3">
+                  <img src={form.imageUrl} alt="Cover preview" className="w-full h-full object-cover" />
+                </div>
+              )}
             </FieldRow>
 
             <div className="border-t-4 border-on-background pt-6">
               <p className="font-label-bold uppercase text-xs tracking-widest mb-3">Live Preview</p>
               <div className="bg-surface border-4 border-on-background overflow-hidden">
                 <div className="relative h-44 border-b-4 border-on-background">
-                  <img src={form.imageUrl ?? PRESET_IMAGES[0]} alt="" className="w-full h-full object-cover" />
+                  <img src={form.imageUrl || undefined} alt="" className="w-full h-full object-cover bg-slate-200" />
                   <div className="absolute top-2 left-2 bg-tertiary-fixed border-2 border-on-background px-2 py-1 font-extrabold text-xs uppercase">
                     {form.category}
                   </div>

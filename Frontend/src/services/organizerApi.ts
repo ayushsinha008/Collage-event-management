@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuthToken } from '../utils/authToken';
 import { Event } from '../types/event';
 import {
   Organizer,
@@ -17,8 +18,8 @@ const API = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('organizer_token');
+API.interceptors.request.use(async (config) => {
+  const token = await getAuthToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -184,7 +185,7 @@ export const organizerApi = {
 
   // Events
   getMyEvents: (params?: { status?: string; category?: string; search?: string }) =>
-    withMockFallback(() => API.get<Event[]>('/organizer/events', { params }).then((r) => r.data.map((e: any) => ({ ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl }))),
+    withMockFallback(() => API.get<Event[]>('/organizer/events', { params }).then((r) => r.data.map((e: any) => ({ ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl, registrationsCount: e.registrationCount ?? e.registrationsCount ?? 0, rsvps: e.registrationCount ?? e.registrationsCount ?? 0 }))),
       mockEvents.filter((e) =>
         (!params?.status || params.status === 'all' || e.status === params.status) &&
         (!params?.category || params.category === 'all' || String(e.category).toLowerCase() === String(params.category).toLowerCase()) &&
@@ -194,12 +195,12 @@ export const organizerApi = {
   createEvent: (data: any) => {
     const payload: any = { ...data };
     if (data.imageUrl) payload.bannerImage = data.imageUrl;
-    return withMockFallback(() => API.post<Event>('/events', payload).then((r) => { const e: any = r.data; return { ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl }; }),
+    return withMockFallback(() => API.post<Event>('/events', payload).then((r) => { const e: any = r.data; return { ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl, registrationsCount: e.registrationCount ?? e.registrationsCount ?? 0, rsvps: e.registrationCount ?? e.registrationsCount ?? 0 }; }),
       { ...data, id: 'evt-' + Date.now(), status: 'draft', registrations: 0, capacity: data.capacity || 100 } as Event
     );
   },
   getEvent: (id: string) =>
-    withMockFallback(() => API.get<Event>(`/events/${id}`).then((r) => { const e: any = r.data; return { ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl }; }), mockEvents.find((e) => e.id === id) as Event),
+    withMockFallback(() => API.get<Event>(`/events/${id}`).then((r) => { const e: any = r.data; return { ...e, location: e.venue || e.location, time: e.startTime || e.time, imageUrl: e.bannerImage || e.imageUrl, registrationsCount: e.registrationCount ?? e.registrationsCount ?? 0, rsvps: e.registrationCount ?? e.registrationsCount ?? 0 }; }), mockEvents.find((e) => e.id === id) as Event),
   updateEvent: (id: string, data: Partial<Event>) => {
     const payload: any = { ...data };
     if (data.location) payload.venue = data.location;
@@ -237,13 +238,13 @@ export const organizerApi = {
         checkedIn: reg.ticket?.status === 'used' || reg.status === 'checked-in',
         checkedInAt: reg.ticket?.usedAt || reg.updatedAt,
         status: reg.status,
-        paymentStatus: 'free'
+        paymentStatus: 'free' as const,
       }));
     },
       mockRegistrations.filter((r) =>
         (!params.eventId || r.eventId === params.eventId) &&
         (!params.search || r.attendeeName.toLowerCase().includes(params.search.toLowerCase()))
-      )
+      ) as any
     ),
   exportRegistrations: (eventId: string) =>
     withMockFallback(() => API.get(`/organizer/registrations/export`, { params: { eventId }, responseType: 'blob' }).then((r) => r.data),
@@ -284,8 +285,6 @@ export const organizerApi = {
   // Analytics
   getAnalytics: (params: { range: '7d' | '30d' | '90d' | 'all' }) =>
     withMockFallback(() => API.get<AnalyticsData>('/organizer/analytics', { params }).then((r) => r.data), mockAnalytics),
-  getLiveAttendance: (eventId: string) =>
-    withMockFallback(() => API.get<LiveAttendanceData>(`/organizer/events/${eventId}/live-attendance`).then((r) => r.data), mockLiveAttendance),
 
   // Announcements
   getAnnouncements: () =>

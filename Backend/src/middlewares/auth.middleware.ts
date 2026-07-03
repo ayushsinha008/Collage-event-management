@@ -5,8 +5,54 @@ import { User } from '../models/User.model';
 import { AuthRequest, Role } from '../types';
 import { ApiError } from '../utils/ApiError';
 
+const STAFF_SESSIONS: Record<string, { uid: string; email: string; name: string; role: Role }> = {
+  'festflow-staff-organizer': {
+    uid: 'festflow-organizer',
+    email: 'organizer@festflow.internal',
+    name: 'FestFlow Organizer',
+    role: Role.ORGANIZER,
+  },
+  'festflow-staff-volunteer': {
+    uid: 'festflow-volunteer',
+    email: 'volunteer@festflow.internal',
+    name: 'FestFlow Volunteer',
+    role: Role.VOLUNTEER,
+  },
+  'festflow-student-test': {
+    uid: 'vzzP3UcLllg25Z3uDEUwicHv7YH3',
+    email: 'ayushsinha391@gmail.com', // Match the user's email to get their ID!
+    name: 'Test Student',
+    role: Role.STUDENT,
+  }
+};
+
+const attachStaffSession = async (req: AuthRequest, session: typeof STAFF_SESSIONS[string], next: NextFunction) => {
+  let user = await User.findOne({ uid: session.uid });
+
+  if (!user) {
+    user = await User.create({
+      uid: session.uid,
+      email: session.email,
+      name: session.name,
+      role: session.role,
+    });
+  } else if (user.role !== session.role) {
+    user.role = session.role;
+    await user.save();
+  }
+
+  req.user = {
+    _id: (user._id as any).toString(),
+    uid: user.uid,
+    email: user.email,
+    role: user.role,
+  };
+
+  next();
+};
+
 export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  let token;
+  let token: string | undefined;
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
@@ -16,30 +62,20 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     return next(new ApiError(401, 'Not authorized to access this route. Please provide a token.'));
   }
 
-  try {
-    let uid, email, name, picture;
+  if (token in STAFF_SESSIONS) {
+    return attachStaffSession(req, STAFF_SESSIONS[token], next);
+  }
 
-    // 1. Verify token
-    if (token === 'valid_mock_token' || token === 'student_mock_token') {
-      uid = 'mock-1'; email = 'test@example.com'; name = 'Mock Student'; picture = '';
-    } else if (token === 'admin_mock_token' || token === 'mock-organizer-token') {
-      uid = 'mock-admin'; email = 'admin@example.com'; name = 'Admin User'; picture = '';
-    } else {
-      const decodedToken = await getAuth().verifyIdToken(token);
-      uid = decodedToken.uid;
-      email = decodedToken.email;
-      name = decodedToken.name;
-      picture = decodedToken.picture;
-    }
+  try {
+    const decodedToken = await getAuth().verifyIdToken(token);
+    const { uid, email, name, picture } = decodedToken;
 
     if (!email) {
       return next(new ApiError(400, 'Token does not contain an email address.'));
     }
 
-    // 2. Find user in MongoDB
     let user = await User.findOne({ uid });
 
-    // 3. Auto-create or sync if exists
     if (!user) {
       user = await User.create({
         uid,
@@ -49,9 +85,12 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
       });
     } else {
       let updated = false;
-      if (picture && !user.photoURL) {
-        user.photoURL = picture;
-        updated = true;
+      if (picture && (!user.photoURL || (user.photoURL.includes('googleusercontent.com') && user.photoURL !== picture))) {
+        // Only update if it's empty or if it's a google URL that changed. Don't overwrite Cloudinary URLs.
+        if (!user.photoURL || user.photoURL.includes('googleusercontent.com')) {
+           user.photoURL = picture;
+           updated = true;
+        }
       }
       if (name && user.name !== name) {
         user.name = name;
@@ -62,17 +101,11 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
       }
     }
 
-    // 4. Inject into request
-    let role = user.role;
-    if (token === 'admin_mock_token' || token === 'mock-organizer-token') {
-      role = Role.ORGANIZER;
-    }
-
     req.user = {
       _id: (user._id as any).toString(),
       uid: user.uid,
       email: user.email,
-      role: role,
+      role: user.role,
     };
 
     next();

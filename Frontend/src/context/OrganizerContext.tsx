@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
 import { Organizer } from '../types/organizer';
 import { organizerApi } from '../services/organizerApi';
+import { mapBackendRole } from '../utils/authToken';
 
 interface OrganizerContextValue {
   organizer: Organizer | null;
@@ -14,31 +16,16 @@ interface OrganizerContextValue {
 const OrganizerContext = createContext<OrganizerContextValue | undefined>(undefined);
 
 export const OrganizerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, login: authLogin, logout: authLogout } = useAuth();
   const [organizer, setOrganizer] = useState<Organizer | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem('organizer_token');
-    if (token) {
-      setOrganizer({
-        id: 'mock-1',
-        name: 'FestFlow Organizer',
-        email: 'organizer@univ.edu',
-        organization: 'Campus Events Club',
-        role: 'organizer',
-        joinedAt: new Date().toISOString(),
-        eventsHosted: 3,
-      });
-    }
-    setLoading(false);
-  }, []);
 
   const refreshProfile = async () => {
     try {
       const data = await organizerApi.getProfile();
       setOrganizer(data);
-    } catch (err) {
-      if (!localStorage.getItem('organizer_token')) {
+    } catch {
+      if (!user || mapBackendRole(user.role) !== 'organizer') {
         setOrganizer(null);
       }
     } finally {
@@ -46,43 +33,31 @@ export const OrganizerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const login = async (email: string, password: string) => {
-    if (password !== '1292') {
-      throw new Error('INVALID PASSWORD. ACCESS DENIED.');
-    }
-
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/organizer/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+  useEffect(() => {
+    if (user && mapBackendRole(user.role) === 'organizer') {
+      setOrganizer({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        organization: 'Campus Events',
+        role: 'organizer',
+        avatarUrl: user.photoURL,
       });
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem('organizer_token', data.token || 'mock-organizer-token');
-      } else {
-        localStorage.setItem('organizer_token', 'mock-organizer-token');
-      }
-    } catch (err) {
-      localStorage.setItem('organizer_token', 'mock-organizer-token');
+      refreshProfile();
+    } else {
+      setOrganizer(null);
+      setLoading(false);
     }
+  }, [user]);
 
-    setOrganizer({
-      id: 'mock-1',
-      name: 'FestFlow Organizer',
-      email: email || 'organizer@univ.edu',
-      organization: 'Campus Events Club',
-      role: 'organizer',
-      joinedAt: new Date().toISOString(),
-      eventsHosted: 3,
-    });
+  const login = async (_email: string, password: string) => {
+    await authLogin('', password, 'organizer');
+    await refreshProfile();
   };
 
   const logout = () => {
-    localStorage.removeItem('organizer_token');
-    localStorage.removeItem('auth_user');
     setOrganizer(null);
-    window.location.href = '/login';
+    authLogout();
   };
 
   return (
@@ -102,7 +77,9 @@ export const OrganizerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 };
 
 export const useOrganizerContext = () => {
-  const ctx = useContext(OrganizerContext);
-  if (!ctx) throw new Error('useOrganizerContext must be used inside OrganizerProvider');
-  return ctx;
+  const context = useContext(OrganizerContext);
+  if (!context) {
+    throw new Error('useOrganizerContext must be used within OrganizerProvider');
+  }
+  return context;
 };

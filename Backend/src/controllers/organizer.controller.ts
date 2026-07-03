@@ -5,6 +5,8 @@ import { sendSuccess } from '../utils/response';
 import { Event } from '../models/Event.model';
 import { Registration } from '../models/Registration.model';
 import { Announcement } from '../models/Announcement.model';
+import { Ticket } from '../models/Ticket.model';
+import { User } from '../models/User.model';
 import { APIFeatures } from '../utils/apiFeatures';
 
 export class OrganizerController {
@@ -36,7 +38,6 @@ export class OrganizerController {
     const events = await Event.find({ organizer: req.user!._id, isDeleted: false }).select('_id');
     const eventIds = events.map((e) => e._id);
 
-    // Fetch registrations first
     const features = new APIFeatures(
       Registration.find({ event: { $in: eventIds } }).populate('user', 'name email photoURL').populate('event', 'title'),
       req.query
@@ -47,16 +48,14 @@ export class OrganizerController {
 
     const registrations = await features.query;
 
-    // For each registration, fetch its ticket
-    const Ticket = require('../models/Ticket.model').Ticket;
-    const regIds = registrations.map(r => r._id);
+    const regIds = registrations.map((r: any) => r._id);
     const tickets = await Ticket.find({ registration: { $in: regIds } });
 
-    const enhancedRegistrations = registrations.map(r => {
-      const ticket = tickets.find(t => t.registration.toString() === r._id.toString());
+    const enhancedRegistrations = registrations.map((r: any) => {
+      const ticket = tickets.find((t: any) => t.registration.toString() === r._id.toString());
       return {
         ...r.toObject(),
-        ticket: ticket ? ticket.toObject() : null
+        ticket: ticket ? ticket.toObject() : null,
       };
     });
 
@@ -66,7 +65,6 @@ export class OrganizerController {
   static async createAnnouncement(req: AuthRequest, res: Response) {
     const { eventId, title, message } = req.body;
 
-    // Verify event belongs to organizer
     const event = await Event.findOne({ _id: eventId, organizer: req.user!._id, isDeleted: false });
     if (!event) {
       return sendSuccess(req, res, 404, 'Event not found or unauthorized');
@@ -87,13 +85,18 @@ export class OrganizerController {
   }
 
   static async getProfile(req: AuthRequest, res: Response) {
+    const user = await User.findById(req.user!._id);
+    if (!user) {
+      return sendSuccess(req, res, 404, 'User not found');
+    }
+
     sendSuccess(req, res, 200, 'Profile fetched', {
-      id: req.user!.uid,
-      name: req.user!.name || (req.user!.email === 'admin@example.com' ? 'Mock Organizer' : 'Organizer'),
-      email: req.user!.email,
-      organization: 'College Events',
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      organization: user.college || 'College Events',
       role: 'organizer',
-      avatarUrl: req.user!.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userAny.name || 'Organizer')}&background=random`,
+      avatarUrl: user.photoURL,
     });
   }
 
@@ -105,8 +108,8 @@ export class OrganizerController {
       deviceBreakdown: { mobile: 65, desktop: 30, tablet: 5 },
       recentViews: [
         { date: new Date().toISOString(), count: 45 },
-        { date: new Date(Date.now() - 86400000).toISOString(), count: 32 }
-      ]
+        { date: new Date(Date.now() - 86400000).toISOString(), count: 32 },
+      ],
     });
   }
 }
