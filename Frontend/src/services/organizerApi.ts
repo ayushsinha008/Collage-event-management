@@ -371,11 +371,14 @@ export const organizerApi = {
           eventId: data.eventId,
           title: data.title,
           message: data.message,
-        }).then(mapAnnouncement),
+          audience: data.audience,
+          scheduledAt: data.scheduledAt,
+        }).then((r) => mapAnnouncement(r.data)),
       { ...data, id: 'a-' + Date.now(), status: 'draft', createdAt: new Date().toISOString() } as Announcement
     ),
   sendAnnouncement: (id: string) =>
-    withMockFallback(() => API.post<Announcement>(`/organizer/announcements/${id}/send`).then((r) => r.data),
+    withMockFallback(
+      () => API.post<any>(`/organizer/announcements/${id}/send`).then((r) => mapAnnouncement(r.data)),
       { id, title: 'Sent', message: '', audience: 'all', status: 'sent', createdBy: 'me', createdAt: new Date().toISOString(), sentAt: new Date().toISOString() } as Announcement
     ),
   deleteAnnouncement: (id: string) =>

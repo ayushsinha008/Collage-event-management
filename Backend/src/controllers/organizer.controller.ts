@@ -9,6 +9,7 @@ import { Announcement } from '../models/Announcement.model';
 import { Ticket } from '../models/Ticket.model';
 import { User } from '../models/User.model';
 import { APIFeatures } from '../utils/apiFeatures';
+import { ApiError } from '../utils/ApiError';
 
 export class OrganizerController {
   static async getDashboard(req: AuthRequest, res: Response) {
@@ -69,17 +70,44 @@ export class OrganizerController {
   }
 
   static async createAnnouncement(req: AuthRequest, res: Response) {
-    const { eventId, title, message } = req.body;
+    const { eventId, title, message, audience, scheduledAt } = req.body as {
+      eventId?: string;
+      title: string;
+      message: string;
+      audience?: 'all' | 'event-attendees' | 'vip';
+      scheduledAt?: string;
+    };
+
+    if (!eventId) {
+      throw new ApiError(400, 'Please select an event for this announcement.');
+    }
 
     await OrganizerService.assertEventOwner(eventId, req.user!);
+
+    let status: 'draft' | 'scheduled' | 'sent' = 'draft';
+    let scheduledDate: Date | undefined;
+
+    if (scheduledAt) {
+      scheduledDate = new Date(scheduledAt);
+      if (Number.isNaN(scheduledDate.getTime())) {
+        throw new ApiError(400, 'Invalid schedule date.');
+      }
+      if (scheduledDate > new Date()) {
+        status = 'scheduled';
+      }
+    }
 
     const announcement = await Announcement.create({
       event: eventId,
       title,
       message,
-      status: 'draft',
+      audience: audience || 'event-attendees',
+      scheduledAt: scheduledDate,
+      status,
     });
-    sendSuccess(req, res, 201, 'Announcement created', announcement);
+
+    const populated = await Announcement.findById(announcement._id).populate('event', 'title');
+    sendSuccess(req, res, 201, 'Announcement created', populated);
   }
 
   static async getAnnouncements(req: AuthRequest, res: Response) {

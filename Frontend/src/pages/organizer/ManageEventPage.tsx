@@ -223,6 +223,7 @@ const RegistrationTableLazy: React.FC<{ eventId: string }> = ({ eventId }) => {
     <RegistrationTable
       registrations={regs}
       loading={false}
+      showEventColumn={false}
       onCheckIn={async (ticketCode) => {
         await organizerApi.checkInAttendee(ticketCode);
         const updated = await organizerApi.getRegistrations({ eventId });

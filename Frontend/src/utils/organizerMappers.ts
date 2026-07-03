@@ -56,6 +56,7 @@ export const mapAnnouncement = (a: any): Announcement => ({
   eventTitle: a.event?.title || a.eventTitle || '',
   audience: a.audience || 'event-attendees',
   status: a.status || 'draft',
+  scheduledAt: a.scheduledAt,
   createdBy: a.createdBy?.toString() || 'organizer',
   createdAt: a.createdAt,
   sentAt: a.sentAt,

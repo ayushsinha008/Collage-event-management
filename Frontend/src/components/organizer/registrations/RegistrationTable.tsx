@@ -6,9 +6,15 @@ interface Props {
   registrations: Registration[];
   onCheckIn?: (code: string) => void;
   loading?: boolean;
+  showEventColumn?: boolean;
 }
 
-export const RegistrationTable: React.FC<Props> = ({ registrations, onCheckIn, loading }) => {
+export const RegistrationTable: React.FC<Props> = ({
+  registrations,
+  onCheckIn,
+  loading,
+  showEventColumn = true,
+}) => {
   if (loading) {
     return (
       <div className="bg-surface border-4 border-on-background p-12 text-center neo-shadow">
@@ -32,6 +38,9 @@ export const RegistrationTable: React.FC<Props> = ({ registrations, onCheckIn, l
           <thead className="bg-surface-variant border-b-4 border-on-background">
             <tr>
               <th className="px-6 py-4 text-left text-sm font-extrabold uppercase tracking-widest border-r-4 border-on-background">Attendee</th>
+              {showEventColumn && (
+                <th className="px-6 py-4 text-left text-sm font-extrabold uppercase tracking-widest border-r-4 border-on-background">Event</th>
+              )}
               <th className="px-6 py-4 text-left text-sm font-extrabold uppercase tracking-widest border-r-4 border-on-background">Ticket</th>
               <th className="px-6 py-4 text-left text-sm font-extrabold uppercase tracking-widest border-r-4 border-on-background">Registered</th>
               <th className="px-6 py-4 text-left text-sm font-extrabold uppercase tracking-widest border-r-4 border-on-background">Status</th>
@@ -41,7 +50,13 @@ export const RegistrationTable: React.FC<Props> = ({ registrations, onCheckIn, l
           </thead>
           <tbody>
             {registrations.map((r, index) => (
-              <RegistrationRow key={r.id} reg={r} onCheckIn={onCheckIn} isLast={index === registrations.length - 1} />
+              <RegistrationRow
+                key={r.id}
+                reg={r}
+                onCheckIn={onCheckIn}
+                isLast={index === registrations.length - 1}
+                showEventColumn={showEventColumn}
+              />
             ))}
           </tbody>
         </table>

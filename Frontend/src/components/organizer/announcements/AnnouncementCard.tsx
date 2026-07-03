@@ -1,6 +1,6 @@
 import React from 'react';
 import { Announcement } from '../../../types/organizer';
-import { Megaphone, Clock, Trash2 } from 'lucide-react';
+import { Megaphone, Clock, Trash2, Send } from 'lucide-react';
 
 const statusColor: Record<string, string> = {
   draft: 'bg-surface-variant text-on-surface-variant border-2 border-on-background',
@@ -11,7 +11,13 @@ const statusColor: Record<string, string> = {
 export const AnnouncementCard: React.FC<{
   a: Announcement;
   onDelete?: (id: string) => void;
-}> = ({ a, onDelete }) => (
+  onSend?: (id: string) => void;
+  sending?: boolean;
+}> = ({ a, onDelete, onSend, sending }) => {
+  const audienceLabel =
+    a.audience === 'all' ? 'All Attendees' : a.audience === 'vip' ? 'VIP Only' : 'Event Attendees';
+
+  return (
   <div className="bg-background border-4 border-on-background p-5 hover:neo-shadow-sm transition-all group">
     <div className="flex items-start justify-between gap-4">
       <div className="flex items-start gap-4 flex-1">
@@ -22,7 +28,7 @@ export const AnnouncementCard: React.FC<{
           <h4 className="font-extrabold text-lg uppercase tracking-wide group-hover:text-primary transition-colors">{a.title}</h4>
           <p className="text-sm font-label-bold text-on-surface-variant mt-2 line-clamp-2 leading-relaxed">{a.message}</p>
           <div className="flex flex-wrap items-center gap-2 mt-4 text-xs font-label-bold uppercase">
-            <span className="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed border-2 border-on-background">{a.audience}</span>
+            <span className="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed border-2 border-on-background">{audienceLabel}</span>
             {a.eventTitle && (
               <span className="px-2 py-1 bg-surface-variant text-on-surface-variant border-2 border-on-background truncate max-w-[200px]">EVENT: {a.eventTitle}</span>
             )}
@@ -37,6 +43,16 @@ export const AnnouncementCard: React.FC<{
         <span className={`px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest ${statusColor[a.status]}`}>
           {a.status}
         </span>
+        {(a.status === 'draft' || a.status === 'scheduled') && onSend && (
+          <button
+            onClick={() => onSend(a.id)}
+            disabled={sending}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest bg-primary-fixed text-on-primary-fixed border-2 border-on-background hover-lift disabled:opacity-50"
+          >
+            <Send className="w-3.5 h-3.5 stroke-[2.5]" />
+            {sending ? 'Sending…' : 'Send Now'}
+          </button>
+        )}
         {onDelete && (
           <button
             onClick={() => onDelete(a.id)}
@@ -48,4 +64,5 @@ export const AnnouncementCard: React.FC<{
       </div>
     </div>
   </div>
-);
+  );
+};

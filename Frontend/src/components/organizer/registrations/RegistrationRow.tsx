@@ -1,14 +1,15 @@
 import React from 'react';
 import { Registration } from '../../../types/organizer';
-import { Check, Mail } from 'lucide-react';
+import { Check, Mail, CalendarDays } from 'lucide-react';
 
 interface Props {
   reg: Registration;
   onCheckIn?: (code: string) => void;
   isLast?: boolean;
+  showEventColumn?: boolean;
 }
 
-export const RegistrationRow: React.FC<Props> = ({ reg, onCheckIn, isLast }) => {
+export const RegistrationRow: React.FC<Props> = ({ reg, onCheckIn, isLast, showEventColumn = true }) => {
   const statusColor: Record<string, string> = {
     confirmed: 'bg-primary-container text-on-primary-container',
     waitlist: 'bg-secondary-container text-on-secondary-container',
@@ -34,6 +35,14 @@ export const RegistrationRow: React.FC<Props> = ({ reg, onCheckIn, isLast }) => 
           </div>
         </div>
       </td>
+      {showEventColumn && (
+        <td className="px-6 py-4 border-r-4 border-on-background">
+          <span className="inline-flex items-center gap-1.5 max-w-[220px] font-label-bold text-xs uppercase bg-tertiary-fixed text-on-tertiary-fixed border-2 border-on-background px-3 py-1.5 line-clamp-2">
+            <CalendarDays className="w-3.5 h-3.5 stroke-[2.5] shrink-0" />
+            {reg.eventTitle || 'Unknown Event'}
+          </span>
+        </td>
+      )}
       <td className="px-6 py-4 border-r-4 border-on-background">
         <span className="font-mono text-xs font-extrabold bg-surface px-2 py-1 border-2 border-on-background whitespace-nowrap">{reg.ticketCode}</span>
       </td>
