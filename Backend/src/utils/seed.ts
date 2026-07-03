@@ -6,7 +6,7 @@ import { Ticket } from '../models/Ticket.model';
 import { Role, RegistrationStatus, TicketStatus } from '../types';
 import { env } from '../config/env.config';
 import { logger } from '../utils/logger';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 const connectDB = async () => {
   try {
@@ -33,7 +33,7 @@ export const seedData = async (shouldConnect = true, shouldExit = true) => {
 
     // 1 Admin
     const admin = await User.create({
-      uid: uuidv4(),
+      uid: crypto.randomUUID(),
       name: 'Admin User',
       email: 'admin@festflow.com',
       role: Role.ADMIN,
@@ -42,7 +42,7 @@ export const seedData = async (shouldConnect = true, shouldExit = true) => {
     // 5 Organizers
     const organizers = await User.insertMany(
       Array.from({ length: 5 }).map((_, i) => ({
-        uid: uuidv4(),
+        uid: crypto.randomUUID(),
         name: `Organizer ${i + 1}`,
         email: `organizer${i + 1}@festflow.com`,
         role: Role.ORGANIZER,
@@ -52,7 +52,7 @@ export const seedData = async (shouldConnect = true, shouldExit = true) => {
     // 10 Volunteers
     const volunteers = await User.insertMany(
       Array.from({ length: 10 }).map((_, i) => ({
-        uid: uuidv4(),
+        uid: crypto.randomUUID(),
         name: `Volunteer ${i + 1}`,
         email: `volunteer${i + 1}@festflow.com`,
         role: Role.VOLUNTEER,
@@ -62,7 +62,7 @@ export const seedData = async (shouldConnect = true, shouldExit = true) => {
     // 100 Students
     const students = await User.insertMany(
       Array.from({ length: 100 }).map((_, i) => ({
-        uid: uuidv4(),
+        uid: crypto.randomUUID(),
         name: `Student ${i + 1}`,
         email: `student${i + 1}@festflow.com`,
         role: Role.STUDENT,
@@ -122,8 +122,8 @@ export const seedData = async (shouldConnect = true, shouldExit = true) => {
       for (const reg of insertedRegistrations) {
         await Ticket.create({
           registration: reg._id,
-          ticketCode: `TKT-${uuidv4().substring(0, 8).toUpperCase()}`,
-          qrToken: uuidv4(),
+          ticketCode: `TKT-${crypto.randomUUID().substring(0, 8).toUpperCase()}`,
+          qrToken: crypto.randomUUID(),
           status: TicketStatus.ACTIVE,
         });
 

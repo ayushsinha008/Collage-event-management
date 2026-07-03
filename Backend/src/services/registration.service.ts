@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 import { Event } from '../models/Event.model';
 import { Registration } from '../models/Registration.model';
 import { Ticket } from '../models/Ticket.model';
 import { ApiError } from '../utils/ApiError';
 import { AuthUser, RegistrationStatus, TicketStatus, Role } from '../types';
-import { v4 as uuidv4 } from 'uuid';
 import { generateQRCode } from './qr.service';
 import { APIFeatures } from '../utils/apiFeatures';
 import { OrganizerService } from './organizer.service';
@@ -65,7 +65,7 @@ export class RegistrationService {
 
       // Generate Ticket
       const ticketCode = `TKT-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString().slice(-4)}`;
-      const qrToken = uuidv4();
+      const qrToken = crypto.randomUUID();
       const qrCodeDataUri = await generateQRCode(qrToken);
 
       let ticket;

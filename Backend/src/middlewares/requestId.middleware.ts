@@ -1,9 +1,9 @@
 import { Response, NextFunction } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { AuthRequest } from '../types';
 
 export const requestIdMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const reqId = uuidv4();
+  const reqId = crypto.randomUUID();
   req.requestId = reqId;
   res.setHeader('X-Request-ID', reqId);
   next();
