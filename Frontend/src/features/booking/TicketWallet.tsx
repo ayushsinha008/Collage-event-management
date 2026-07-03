@@ -6,14 +6,33 @@ interface TicketWalletProps {
   ticketDetails?: any[];
   handleRegister: (event: Event) => void;
   setCurrentTab: (tab: 'dashboard' | 'events' | 'tickets') => void;
+  searchQuery: string;
 }
 
 export default function TicketWallet({
   events,
   ticketDetails = [],
   handleRegister,
-  setCurrentTab
+  setCurrentTab,
+  searchQuery
 }: TicketWalletProps) {
+  
+  // Apply Search Filter to Ticket Wallet
+  const filteredTicketDetails = ticketDetails.filter((ticketDetail: any) => {
+    const eventId =
+      ticketDetail.registration?.event?._id ||
+      ticketDetail.registration?.event?.id ||
+      ticketDetail.registration?.event;
+    const event = events.find((e) => e.id === eventId);
+    
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const titleMatch = event?.title?.toLowerCase().includes(query) || ticketDetail.registration?.event?.title?.toLowerCase().includes(query);
+    const codeMatch = ticketDetail.ticketCode?.toLowerCase().includes(query);
+    
+    return titleMatch || codeMatch;
+  });
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-10 text-center md:text-left">
@@ -23,9 +42,9 @@ export default function TicketWallet({
         </p>
       </div>
 
-      {ticketDetails.length > 0 ? (
+      {filteredTicketDetails.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {ticketDetails.map((ticketDetail: any) => {
+          {filteredTicketDetails.map((ticketDetail: any) => {
             const eventId =
               ticketDetail.registration?.event?._id ||
               ticketDetail.registration?.event?.id ||

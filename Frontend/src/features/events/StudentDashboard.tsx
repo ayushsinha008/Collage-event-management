@@ -7,6 +7,7 @@ interface StudentDashboardProps {
   handleRegister: (event: Event) => void;
   setSelectedEvent: (event: Event) => void;
   setCurrentTab: (tab: 'dashboard' | 'events' | 'tickets') => void;
+  searchQuery: string;
 }
 
 export default function StudentDashboard({
@@ -14,16 +15,26 @@ export default function StudentDashboard({
   myTickets,
   handleRegister,
   setSelectedEvent,
-  setCurrentTab
+  setCurrentTab,
+  searchQuery
 }: StudentDashboardProps) {
   const { user } = useAuth();
   
   // Find registered events
   const registeredEvents = events.filter(e => myTickets.includes(e.id));
   
+  // Apply Search Filter to Recommendations
+  const matchesSearch = (e: Event) => 
+    !searchQuery.trim() || 
+    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.organizer.toLowerCase().includes(searchQuery.toLowerCase());
+
   // Find recommended events (events the user has NOT registered for yet)
   const recommendations = events
     .filter(e => !myTickets.includes(e.id))
+    .filter(matchesSearch)
     .slice(0, 3); // Pick first 3 as recommendations
 
   // Get next event details

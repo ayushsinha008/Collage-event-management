@@ -58,10 +58,6 @@ export default function Header({
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              if (currentTab !== 'events' && e.target.value.trim() !== '') {
-                setCurrentTab('events');
-                setSelectedEvent(null);
-              }
             }}
             placeholder="Search events, locations..."
             className="bg-transparent border-none outline-none flex-grow font-body-md focus:ring-0 focus:border-transparent text-on-surface p-0"

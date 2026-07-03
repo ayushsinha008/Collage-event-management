@@ -164,6 +164,7 @@ function App() {
               handleRegister={handleRegister}
               setSelectedEvent={setSelectedEvent}
               setCurrentTab={setCurrentTab}
+              searchQuery={searchQuery}
             />
           ) : currentTab === 'events' ? (
             <EventDashboard
@@ -183,6 +184,7 @@ function App() {
               ticketDetails={myTicketDetails}
               handleRegister={handleRegister}
               setCurrentTab={setCurrentTab}
+              searchQuery={searchQuery}
             />
           )}
         </div>
