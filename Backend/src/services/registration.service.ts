@@ -188,8 +188,11 @@ export class RegistrationService {
       ticketObj.qrCodeDataUri = await generateQRCode(ticket.qrToken);
       return ticketObj;
     }));
-    
-    return ticketsWithQR;
+
+    return ticketsWithQR.filter((ticket: any) => {
+      const event = ticket.registration?.event;
+      return event && !event.isDeleted;
+    });
   }
 
   static async getTicketById(ticketId: string, user: AuthUser) {

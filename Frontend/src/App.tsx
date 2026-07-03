@@ -29,7 +29,14 @@ function App() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const myTickets = myTicketDetails
+  const validTicketDetails = myTicketDetails.filter((ticket) => {
+    const event = ticket.registration?.event;
+    if (!event || event.isDeleted) return false;
+    const eventId = String(event._id || event.id || ticket.registration?.event || '');
+    return events.some((e) => e.id === eventId);
+  });
+
+  const myTickets = validTicketDetails
     .map((t) => t.registration?.event?._id || t.registration?.event?.id || t.registration?.event)
     .filter(Boolean) as string[];
 
@@ -62,9 +69,12 @@ function App() {
 
   useEffect(() => {
     fetchEvents();
-    const interval = setInterval(() => fetchEvents(true), 10000);
+    const interval = setInterval(() => {
+      fetchEvents(true);
+      fetchTickets();
+    }, 10000);
     return () => clearInterval(interval);
-  }, [fetchEvents]);
+  }, [fetchEvents, fetchTickets]);
 
   useEffect(() => {
     fetchTickets();
@@ -191,7 +201,7 @@ function App() {
               <TicketWallet
                 events={events}
                 myTickets={myTickets}
-                ticketDetails={myTicketDetails}
+                ticketDetails={validTicketDetails}
                 handleRegister={handleRegister}
                 setCurrentTab={setCurrentTab}
                 searchQuery={searchQuery}

@@ -1,7 +1,9 @@
 import { Event, IEvent } from '../models/Event.model';
+import { Registration } from '../models/Registration.model';
+import { Ticket } from '../models/Ticket.model';
 import { ApiError } from '../utils/ApiError';
 import { APIFeatures } from '../utils/apiFeatures';
-import { AuthUser, Role } from '../types';
+import { AuthUser, Role, RegistrationStatus, TicketStatus } from '../types';
 import { uploadImage } from './cloudinary.service';
 
 const isBase64Image = (value: string) =>
@@ -93,6 +95,26 @@ export class EventService {
     event.deletedAt = new Date();
     event.updatedBy = user._id as any;
 
+    const activeRegistrations = await Registration.find({
+      event: id,
+      status: RegistrationStatus.CONFIRMED,
+    }).select('_id');
+
+    if (activeRegistrations.length > 0) {
+      const registrationIds = activeRegistrations.map((r) => r._id);
+
+      await Registration.updateMany(
+        { _id: { $in: registrationIds } },
+        { status: RegistrationStatus.CANCELLED }
+      );
+
+      await Ticket.updateMany(
+        { registration: { $in: registrationIds }, status: TicketStatus.ACTIVE },
+        { status: TicketStatus.CANCELLED }
+      );
+    }
+
+    event.registrationCount = 0;
     await event.save();
   }
 }
