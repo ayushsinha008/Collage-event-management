@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import { getAuth } from 'firebase-admin/auth';
 import '../config/firebase.config';
 import { User } from '../models/User.model';
-import { AuthRequest } from '../types';
+import { AuthRequest, Role } from '../types';
 import { ApiError } from '../utils/ApiError';
 
 export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -52,7 +52,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     // 4. Inject into request
     let role = user.role;
     if (token === 'admin_mock_token' || token === 'mock-organizer-token') {
-      role = 'organizer' as any;
+      role = Role.ORGANIZER;
     }
 
     req.user = {

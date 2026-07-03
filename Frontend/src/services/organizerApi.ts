@@ -23,6 +23,13 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+API.interceptors.response.use((response) => {
+  if (response.data && response.data.success && response.data.data !== undefined) {
+    response.data = response.data.data;
+  }
+  return response;
+});
+
 const withMockFallback = async <T>(apiCall: () => Promise<T>, mockData: T): Promise<T> => {
   try {
     return await apiCall();
@@ -160,17 +167,17 @@ const mockLiveAttendance: LiveAttendanceData = {
 export const organizerApi = {
   // Profile
   getProfile: () =>
-    withMockFallback(() => API.get<Organizer>('/organizer/profile').then((r) => r.data), mockProfile),
+    withMockFallback(() => API.get<Organizer>('/users/profile').then((r) => r.data), mockProfile),
   updateProfile: (data: Partial<Organizer>) =>
-    withMockFallback(() => API.put<Organizer>('/organizer/profile', data).then((r) => r.data), { ...mockProfile, ...data }),
+    withMockFallback(() => API.patch<Organizer>('/users/profile', data).then((r) => r.data), { ...mockProfile, ...data }),
 
   // Dashboard
   getDashboardStats: () =>
-    withMockFallback(() => API.get<DashboardStats>('/organizer/dashboard/stats').then((r) => r.data), mockStats),
+    withMockFallback(() => API.get<DashboardStats>('/organizer/dashboard').then((r) => r.data), mockStats),
 
   // Events
   getMyEvents: (params?: { status?: string; category?: string; search?: string }) =>
-    withMockFallback(() => API.get<Event[]>('/events', { params }).then((r) => r.data),
+    withMockFallback(() => API.get<Event[]>('/organizer/events', { params }).then((r) => r.data),
       mockEvents.filter((e) =>
         (!params?.status   || params.status   === 'all' || e.status === params.status) &&
         (!params?.category || params.category === 'all' || String(e.category).toLowerCase() === String(params.category).toLowerCase()) &&
@@ -179,18 +186,18 @@ export const organizerApi = {
     ),
   createEvent: (data: any) =>
     withMockFallback(() => API.post<Event>('/events', data).then((r) => r.data),
-      { ...data, id: 'e-' + Date.now(), registrationsCount: 0, rsvps: 0, status: data.status ?? 'draft', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Event
+      { ...data, id: 'evt-' + Date.now(), status: 'draft', registrations: 0, capacity: data.capacity || 100 } as Event
     ),
+  getEvent: (id: string) =>
+    withMockFallback(() => API.get<Event>(`/events/${id}`).then((r) => r.data), mockEvents.find((e) => e.id === id) as Event),
   updateEvent: (id: string, data: Partial<Event>) =>
     withMockFallback(() => API.patch<Event>(`/events/${id}`, data).then((r) => r.data),
-      (() => { const base = mockEvents.find((e) => e.id === id); return base ? { ...base, ...data, updatedAt: new Date().toISOString() } : ({ id, ...data } as Event); })()
+      { ...(mockEvents.find((e) => e.id === id) as Event), ...data }
     ),
   deleteEvent: (id: string) =>
     withMockFallback(() => API.delete(`/events/${id}`).then((r) => r.data), { success: true }),
   publishEvent: (id: string) =>
     withMockFallback(() => API.patch<Event>(`/events/${id}`, { status: 'published' }).then((r) => r.data), mockEvents.find((e) => e.id === id) ?? mockEvents[0]),
-  getEventById: (id: string) =>
-    withMockFallback(() => API.get<Event>(`/events/${id}`).then((r) => r.data), mockEvents.find((e) => e.id === id) ?? mockEvents[0]),
 
   // Registrations
   getRegistrations: (params: { eventId?: string; search?: string; status?: string }) =>
@@ -257,6 +264,10 @@ export const organizerApi = {
     withMockFallback(() => API.delete(`/organizer/announcements/${id}`).then((r) => r.data), { success: true }),
 
   // Volunteers
+  getEventRegistrations: (eventId: string, params?: any) =>
+    withMockFallback(() => API.get<Registration[]>(`/organizer/registrations`, { params: { ...params, event: eventId } }).then((r) => r.data),
+      mockRegistrations.filter((r) => r.eventId === eventId)
+    ),
   getVolunteers: (eventId: string) =>
     withMockFallback(() => API.get<Volunteer[]>(`/organizer/events/${eventId}/volunteers`).then((r) => r.data),
       mockVolunteers.filter((v) => v.eventId === eventId)

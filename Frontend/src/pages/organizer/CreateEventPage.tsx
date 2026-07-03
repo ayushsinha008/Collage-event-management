@@ -144,6 +144,7 @@ export const CreateEventPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FieldRow label="Date *" icon={Calendar}>
                 <input
+                  type="date"
                   value={form.date}
                   onChange={(e) => set('date', e.target.value)}
                   placeholder="e.g. OCT 30 or 2026-10-30"
@@ -152,6 +153,7 @@ export const CreateEventPage: React.FC = () => {
               </FieldRow>
               <FieldRow label="Time *" icon={Calendar}>
                 <input
+                  type="time"
                   value={form.time}
                   onChange={(e) => set('time', e.target.value)}
                   placeholder="e.g. 06:00 PM"
