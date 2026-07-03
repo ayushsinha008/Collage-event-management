@@ -7,6 +7,7 @@ import { studentApi } from './services/studentApi';
 import { useAuth } from './context/AuthContext';
 import { getAuthToken } from './utils/authToken';
 import { API_BASE_URL } from './config/api';
+import { normalizeTicketScan } from './utils/ticketScan';
 
 const QRScanner = lazy(() => import('./features/volunteer/QRScanner'));
 
@@ -55,6 +56,7 @@ export default function VolunteerApp() {
   };
 
   const handleCheckIn = async (qrToken: string) => {
+    const tokenValue = normalizeTicketScan(qrToken);
     try {
       const token = await getAuthToken();
       if (!token) {
@@ -67,7 +69,7 @@ export default function VolunteerApp() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ qrToken }),
+        body: JSON.stringify({ qrToken: tokenValue }),
       });
 
       const data = await response.json();
@@ -77,7 +79,7 @@ export default function VolunteerApp() {
         const event = data.data.event;
         const studentName = ticket?.registration?.user?.name || 'Student Attendee';
         const eventTitle = event?.title || 'Event Entry';
-        const ticketCode = ticket?.ticketCode || qrToken;
+        const ticketCode = ticket?.ticketCode || tokenValue;
         const eventId = event?._id || event?.id;
 
         if (eventId) {
@@ -107,7 +109,7 @@ export default function VolunteerApp() {
       const failedLog: ScanLog = {
         id: `log-${Date.now()}`,
         studentName: 'Unknown',
-        ticketCode: qrToken,
+        ticketCode: tokenValue,
         eventTitle: 'Unknown Event',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'failed',

@@ -1,8 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Camera, X, CheckCircle2, AlertTriangle, Keyboard } from 'lucide-react';
+import { normalizeTicketScan } from '../../utils/ticketScan';
 
 const SCANNER_ELEMENT_ID = 'volunteer-qr-scanner';
+
+async function pickCameraId(): Promise<string | MediaTrackConstraints> {
+  try {
+    const cameras = await Html5Qrcode.getCameras();
+    if (cameras.length === 0) return { facingMode: 'environment' };
+    const back = cameras.find((c) => /back|rear|environment/i.test(c.label));
+    return back?.id ?? cameras[cameras.length - 1].id;
+  } catch {
+    return { facingMode: 'user' };
+  }
+}
 
 interface QRScannerProps {
   onCheckIn: (ticketId: string) => Promise<{ success: boolean; message: string; studentName: string; eventTitle: string }>;
@@ -14,6 +26,7 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
   const [showManualInput, setShowManualInput] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(true);
+  const [cameraReady, setCameraReady] = useState(false);
 
   const [scanResult, setScanResult] = useState<{
     success: boolean;
@@ -33,23 +46,18 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) return;
-
       const audioCtx = new AudioContextClass();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
       if (type === 'success') {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
         osc.type = 'sine';
         osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.08);
       } else {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(140, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
@@ -79,12 +87,13 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
       // ignore cleanup errors
     }
     scannerRef.current = null;
+    setCameraReady(false);
   }, []);
 
   const processScan = useCallback(async (ticketCodeStr: string) => {
     if (processingRef.current || scanBlockedRef.current) return;
 
-    const cleanCode = ticketCodeStr.trim();
+    const cleanCode = normalizeTicketScan(ticketCodeStr);
     if (!cleanCode) return;
 
     processingRef.current = true;
@@ -118,53 +127,79 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
 
     processingRef.current = false;
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       setScanResult(null);
       scanBlockedRef.current = false;
       setScanning(true);
     }, 2800);
   }, [stopScanner]);
 
-  const resumeScanning = useCallback(() => {
+  const resumeScanning = useCallback(async () => {
     setScanResult(null);
     scanBlockedRef.current = false;
-    setScanning(true);
-  }, []);
+    processingRef.current = false;
+    await stopScanner();
+    setScanning(false);
+    window.setTimeout(() => setScanning(true), 100);
+  }, [stopScanner]);
 
   useEffect(() => {
-    if (!scanning || scanBlockedRef.current) return;
+    if (!scanning || scanBlockedRef.current || scanResult) return;
+
+    if (!window.isSecureContext) {
+      setCameraError('Camera requires HTTPS or localhost. Use manual ticket entry.');
+      return;
+    }
 
     let cancelled = false;
     setCameraError(null);
 
     const startScanner = async () => {
       try {
-        const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID);
+        await stopScanner();
+        if (cancelled) return;
+
+        const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID, { verbose: false });
         scannerRef.current = scanner;
+        const cameraId = await pickCameraId();
 
         await scanner.start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 260, height: 260 }, aspectRatio: 1 },
+          cameraId,
+          {
+            fps: 12,
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+              const edge = Math.min(viewfinderWidth, viewfinderHeight);
+              const size = Math.floor(Math.min(edge * 0.75, 280));
+              return { width: size, height: size };
+            },
+          },
           (decodedText) => {
-            if (!cancelled) processScan(decodedText);
+            if (!cancelled && !processingRef.current) {
+              processScan(decodedText);
+            }
           },
           () => {}
         );
+
+        if (!cancelled) setCameraReady(true);
       } catch (err) {
         console.error('Camera/scanner failed:', err);
         if (!cancelled) {
-          setCameraError('Camera access failed. Use manual ticket entry below.');
+          setCameraError(
+            'Camera not available. Allow camera permission, or use manual ticket entry below.'
+          );
         }
       }
     };
 
-    startScanner();
+    const timer = window.setTimeout(startScanner, 150);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
       stopScanner();
     };
-  }, [scanning, processScan, stopScanner]);
+  }, [scanning, scanResult, processScan, stopScanner]);
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,7 +211,6 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col md:flex-row text-white overflow-hidden font-body animate-fadeIn">
-
       <div className="md:w-80 w-full bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 p-6 flex flex-col shrink-0 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2.5">
@@ -199,7 +233,7 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
         <div className="bg-slate-950 p-3 rounded-xl border-2 border-slate-800 mb-6">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">How to scan</p>
           <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
-            Point the camera at the student&apos;s ticket QR code. You can also type the ticket code (TKT-...) or QR token manually.
+            Point the camera at the student&apos;s ticket QR. The code contains a secure token — not the TKT number printed below it.
           </p>
         </div>
 
@@ -225,7 +259,7 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
                 type="text"
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value)}
-                placeholder="TKT-ABC123-4567 or QR UUID"
+                placeholder="TKT-ABC123-4567"
                 className="w-full bg-slate-900 border-2 border-slate-700 px-3 py-2 text-xs rounded-lg text-white font-mono placeholder-slate-600 focus:outline-none focus:border-orange-500"
                 autoComplete="off"
               />
@@ -241,48 +275,45 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
 
         <div className="mt-auto border-t-2 border-slate-800/80 pt-4">
           <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">
-            Each ticket can only be checked in once. Duplicate scans will be rejected by the server.
+            {cameraReady
+              ? 'Camera live — align QR inside the orange frame.'
+              : 'Waiting for camera… allow permission when prompted.'}
           </p>
         </div>
       </div>
 
-      <div className="flex-1 relative bg-slate-950 flex flex-col items-center justify-center p-6 select-none">
-        <div
-          id={SCANNER_ELEMENT_ID}
-          className={`absolute inset-0 w-full h-full ${scanning && !scanResult ? 'opacity-90' : 'opacity-0 pointer-events-none'}`}
-        />
+      <div className="flex-1 relative bg-slate-950 flex flex-col items-center justify-center p-4 md:p-8 select-none min-h-[320px]">
+        {!scanResult && (
+          <div className="relative w-full max-w-md aspect-square">
+            <div
+              id={SCANNER_ELEMENT_ID}
+              className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden bg-black [&_video]:!object-cover [&_video]:!w-full [&_video]:!h-full"
+            />
 
-        {!scanning && !scanResult && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 z-10">
-            <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Processing scan...</p>
+            <div className="absolute inset-0 pointer-events-none z-10 rounded-2xl border-4 border-orange-500 shadow-[0_0_0_9999px_rgba(2,6,23,0.45)]">
+              <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-orange-400 rounded-tl-xl" />
+              <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-orange-400 rounded-tr-xl" />
+              <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-orange-400 rounded-bl-xl" />
+              <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-orange-400 rounded-br-xl" />
+            </div>
+
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-slate-950/90 border border-slate-700 px-3.5 py-1.5 rounded-xl text-[10px] text-slate-300 font-black uppercase tracking-wider">
+              <span
+                className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                  cameraReady ? 'bg-emerald-500 animate-pulse' : 'bg-orange-500 animate-blink'
+                }`}
+              />
+              {cameraReady ? 'Scanning…' : scanning ? 'Starting camera…' : 'Paused'}
+            </div>
           </div>
         )}
 
-        <div className="relative z-10 w-full max-w-sm aspect-square border-[4px] border-slate-800 rounded-3xl flex flex-col items-center justify-center p-8 bg-slate-950/20 backdrop-blur-[1px] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] pointer-events-none">
-          <div className="absolute top-[-4px] left-[-4px] w-12 h-12 border-t-8 border-l-8 border-orange-500 rounded-tl-2xl"></div>
-          <div className="absolute top-[-4px] right-[-4px] w-12 h-12 border-t-8 border-r-8 border-orange-500 rounded-tr-2xl"></div>
-          <div className="absolute bottom-[-4px] left-[-4px] w-12 h-12 border-b-8 border-l-8 border-orange-500 rounded-bl-2xl"></div>
-          <div className="absolute bottom-[-4px] right-[-4px] w-12 h-12 border-b-8 border-r-8 border-orange-500 rounded-br-2xl"></div>
-
-          <div className="absolute left-[3%] right-[3%] h-1.5 bg-gradient-to-r from-transparent via-orange-500 to-transparent shadow-[0_0_15px_4px_#f97316] scanner-laser rounded-full z-20"></div>
-
-          <div className="border border-orange-500/20 border-dashed rounded-xl w-3/4 h-3/4 flex flex-col items-center justify-center text-center opacity-45">
-            <Camera className="w-8 h-8 text-orange-500 animate-pulse mb-2" />
-            <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">Awaiting Ticket Scan</span>
-          </div>
-
-          <div className="absolute bottom-6 flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-xl text-[10px] text-slate-400 font-black uppercase tracking-wider">
-            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${scanning && !scanResult ? 'bg-orange-500 animate-blink' : 'bg-slate-600'}`}></span>
-            {scanning && !scanResult ? 'Scanbox active' : 'Paused'}
-          </div>
-        </div>
-
         {scanResult && (
-          <div className={`absolute inset-0 z-40 flex flex-col items-center justify-center p-6 animate-fadeIn ${
-            scanResult.success
-              ? 'bg-emerald-950/95 text-emerald-100'
-              : 'bg-rose-950/95 text-rose-100'
-          }`}>
+          <div
+            className={`absolute inset-0 z-40 flex flex-col items-center justify-center p-6 animate-fadeIn ${
+              scanResult.success ? 'bg-emerald-950/95 text-emerald-100' : 'bg-rose-950/95 text-rose-100'
+            }`}
+          >
             <div className="max-w-md w-full text-center space-y-6 animate-scaleUp">
               <div className="mx-auto w-24 h-24 rounded-full flex items-center justify-center animate-bounce shadow-lg">
                 {scanResult.success ? (
@@ -296,7 +327,7 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
                 <h3 className="font-headline text-3xl md:text-4xl font-black uppercase tracking-tight">
                   {scanResult.success ? 'Access Granted' : 'Access Denied'}
                 </h3>
-                <div className="h-1.5 w-20 bg-current mx-auto mt-3 rounded-full opacity-35"></div>
+                <div className="h-1.5 w-20 bg-current mx-auto mt-3 rounded-full opacity-35" />
               </div>
 
               <div className="bg-slate-950 border-4 border-black p-6 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 text-left">
@@ -316,13 +347,13 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
                 </div>
 
                 <div className="pt-2 border-t border-slate-800 flex gap-2 items-center text-xs font-bold">
-                  <span className="w-2.5 h-2.5 rounded-full bg-current"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-current" />
                   <span className="text-white/85">{scanResult.message}</span>
                 </div>
               </div>
 
               <p className="text-[11px] text-white/55 animate-pulse uppercase font-black tracking-wider">
-                Scanning will resume in 3 seconds...
+                Scanning will resume in 3 seconds…
               </p>
 
               <button
