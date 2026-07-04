@@ -37,50 +37,72 @@ export const CreateEventPage: React.FC = () => {
 
   const canStep1 = form.title.trim() && form.description.trim().length >= 10 && form.category;
   const canStep2 = form.date.trim() && form.time.trim() && form.location.trim();
-  const canStep3 = form.capacity > 0 && form.organizer.trim();
+  const canStep3 = form.capacity > 0;
+
+  // Compress + resize image to max 800px wide for event banners (keeps under Vercel 4.5MB limit)
+  const compressEventImage = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX_W = 800;
+        const scale = Math.min(MAX_W / img.width, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas not supported'));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(objectUrl);
+        resolve(canvas.toDataURL('image/jpeg', 0.80));
+      };
+      img.onerror = reject;
+      img.src = objectUrl;
+    });
 
   const submit = async (mode: PublishMode) => {
-    if (!canStep1) return alert("Please complete Step 1 (Basics). Description must be at least 10 chars.");
-    if (!canStep2) return alert("Please complete Step 2 (When & Where). Ensure Date, Time, and Location are filled.");
-    if (!canStep3) return alert("Please complete Step 3 (Capacity & Cover). Capacity must be > 0 and Organizer must be filled.");
+    if (!canStep1) return alert('Please complete Step 1 (Basics). Description must be at least 10 chars.');
+    if (!canStep2) return alert('Please complete Step 2 (When & Where). Ensure Date, Time, and Location are filled.');
+    if (!canStep3) return alert('Please complete Step 3 (Capacity & Cover). Capacity must be > 0.');
 
     setBusy(true);
     try {
-      let isoDate = "";
-      try {
-        isoDate = new Date(form.date).toISOString();
-      } catch {
-        alert("Invalid Date format. Please select a valid date.");
+      // Ensure date is a valid ISO string
+      const parsedDate = new Date(form.date);
+      if (isNaN(parsedDate.getTime())) {
+        alert('Invalid date. Please select a valid date.');
         setBusy(false);
         return;
       }
+      const isoDate = parsedDate.toISOString();
 
-      const payload = {
-        title: form.title,
-        description: form.description,
+      const payload: any = {
+        title: form.title.trim(),
+        description: form.description.trim(),
         category: form.category,
-        venue: form.location,
+        venue: form.location.trim(),
         date: isoDate,
         startTime: form.time,
-        endTime: "23:59",
-        capacity: form.capacity,
-        imageUrl: form.imageUrl,
+        endTime: '23:59',
+        capacity: Number(form.capacity),
         status: mode === 'draft' ? 'Draft' : 'Upcoming',
       };
-      
+
+      // Only include bannerImage if one was selected
+      if (form.imageUrl) payload.bannerImage = form.imageUrl;
+
       await organizerApi.createEvent(payload);
       navigate('/organizer/events');
     } catch (err: any) {
-      console.error("Create Event Error:", err.response?.data || err);
+      console.error('Create Event Error:', err.response?.data || err);
       const data = err.response?.data;
-      let errMsg = data?.message || "Please check your inputs.";
-      
-      if (data?.errors && Array.isArray(data.errors)) {
-        // Backend returns an array of formatted strings for errors
-        errMsg += '\n\nDetails:\n' + data.errors.join('\n');
+      let errMsg = data?.message || 'Request failed. Check your network.';
+
+      if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        errMsg += '\n\nValidation Details:\n' + data.errors.join('\n');
       }
 
-      alert(`Failed to create event: ${errMsg}`);
+      alert(`Failed to create event:\n${errMsg}`);
     } finally {
       setBusy(false);
     }
@@ -219,17 +241,20 @@ export const CreateEventPage: React.FC = () => {
                   className="w-full bg-background border-4 border-on-background px-4 py-3 font-label-bold uppercase focus:outline-none focus:neo-shadow-sm"
                 />
               </FieldRow>
-              <FieldRow label="Organizer / Club *" icon={Users}>
+              <FieldRow label="Organizer / Club (optional)" icon={Users}>
                 <input
                   value={form.organizer}
                   onChange={(e) => set('organizer', e.target.value)}
-                  placeholder="e.g. Music Club"
+                  placeholder="e.g. Music Club, Cultural Committee"
                   className="w-full bg-background border-4 border-on-background px-4 py-3 font-label-bold uppercase focus:outline-none focus:neo-shadow-sm"
                 />
+                <p className="text-[10px] text-on-surface-variant mt-1 font-semibold uppercase tracking-wider">
+                  Optional — your organizer profile is auto-linked from your account
+                </p>
               </FieldRow>
             </div>
 
-            <FieldRow label="Cover Image" icon={ImageIcon}>
+            <FieldRow label="Cover Image (Optional)" icon={ImageIcon}>
               <div className="mb-3">
                 <label className="flex items-center gap-3 border-4 border-on-background bg-background px-4 py-3 cursor-pointer hover:bg-surface-variant transition-colors">
                   <Upload className="w-5 h-5 stroke-[2.5]" />
@@ -238,16 +263,22 @@ export const CreateEventPage: React.FC = () => {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                  onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      if (file.size > 5 * 1024 * 1024) {
-                        alert('Image must be under 5MB');
+                      if (file.size > 10 * 1024 * 1024) {
+                        alert('Image must be under 10MB');
                         return;
                       }
-                      const reader = new FileReader();
-                      reader.onloadend = () => set('imageUrl', reader.result as string);
-                      reader.readAsDataURL(file);
+                      try {
+                        const compressed = await compressEventImage(file);
+                        set('imageUrl', compressed);
+                      } catch {
+                        // fallback: read directly
+                        const reader = new FileReader();
+                        reader.onloadend = () => set('imageUrl', reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
                     }}
                   />
                 </label>
