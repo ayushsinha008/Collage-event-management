@@ -137,8 +137,11 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     };
 
     next();
-  } catch (error) {
+  } catch (error: any) {
     console.error('USER FETCH/CREATE ERROR:', error);
+    if (error.name === 'MongooseError' && error.message.includes('before initial connection is complete')) {
+      return next(new ApiError(503, 'Database connection offline. If you are using MongoDB Atlas, please ensure you have whitelisted "0.0.0.0/0" (Allow Access from Anywhere) in your MongoDB Atlas Network Access settings.'));
+    }
     return next(new ApiError(500, 'Internal server error during authentication.'));
   }
 };
