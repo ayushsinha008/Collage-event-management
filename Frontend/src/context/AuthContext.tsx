@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { auth, googleProvider } from '../services/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged } from 'firebase/auth';
 import { studentApi } from '../services/studentApi';
 import { mapBackendRole } from '../utils/authToken';
 
@@ -130,15 +130,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [syncUserFromBackend]);
 
   const signInWithGoogle = async (): Promise<User> => {
-    const result = await signInWithPopup(auth, googleProvider);
-    const token = await result.user.getIdToken();
-    localStorage.setItem('auth_token', token);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const token = await result.user.getIdToken();
+      localStorage.setItem('auth_token', token);
 
-    const profile = await studentApi.getProfile();
-    const loggedInUser = buildUserFromProfile(profile, result.user.uid);
-    localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
-    setUser(loggedInUser);
-    return loggedInUser;
+      const profile = await studentApi.getProfile();
+      const loggedInUser = buildUserFromProfile(profile, result.user.uid);
+      localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
+      setUser(loggedInUser);
+      return loggedInUser;
+    } catch (err: any) {
+      if (err.code === 'auth/popup-blocked' || err.message?.includes('popup') || err.message?.includes('blocked')) {
+        console.warn('Google Sign-In Popup blocked. Falling back to Redirect method...');
+        await signInWithRedirect(auth, googleProvider);
+        return new Promise(() => {}); // Return non-resolving promise as page is redirecting
+      }
+      throw err;
+    }
   };
 
   const completeStaffSession = async (profile: any, role: 'organizer' | 'volunteer') => {
