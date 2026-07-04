@@ -14,10 +14,10 @@ export default function EventDetail({
   setSelectedEvent
 }: EventDetailProps) {
   return (
-    <div className="max-w-4xl mx-auto bg-white border-4 border-on-background neo-shadow p-6 md:p-10 relative">
+    <div className="max-w-4xl mx-auto bg-surface border-4 border-on-background neo-shadow p-6 md:p-10 relative">
       <button 
         onClick={() => setSelectedEvent(null)}
-        className="absolute top-4 right-4 bg-white border-2 border-on-background p-1 hover:bg-[#ffe353] hover-lift press-down flex items-center justify-center"
+        className="absolute top-4 right-4 bg-surface border-2 border-on-background p-1 hover:bg-[#ffe353] hover-lift press-down flex items-center justify-center"
       >
         <span className="material-symbols-outlined">arrow_back</span>
       </button>

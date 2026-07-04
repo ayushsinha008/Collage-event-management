@@ -24,24 +24,51 @@ export default function Header({
   const { user, logout, updatePfp } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   const defaultPfp = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random`;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File size must be less than 5MB");
-        return;
-      }
-      setIsUploading(true);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        await updatePfp(base64String);
-        setIsUploading(false);
+  // Compress + resize image to at most 256×256 before sending to backend
+  const compressImage = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 256;
+        const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas not supported'));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(objectUrl);
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
       };
-      reader.readAsDataURL(file);
+      img.onerror = reject;
+      img.src = objectUrl;
+    });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      setUploadError('File must be less than 8 MB');
+      return;
+    }
+    setUploadError('');
+    setIsUploading(true);
+    try {
+      const compressed = await compressImage(file);
+      const success = await updatePfp(compressed);
+      if (!success) setUploadError('Upload failed — please try again.');
+    } catch (err) {
+      console.error('PFP compression/upload error:', err);
+      setUploadError('Upload failed — please try again.');
+    } finally {
+      setIsUploading(false);
+      // Reset input so the same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -97,7 +124,7 @@ export default function Header({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className={`w-full text-left px-2 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer ${isUploading ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'hover:bg-[#a6f2cf] dark:hover:bg-slate-800'}`}
+                className={`w-full text-left px-2 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer ${isUploading ? 'bg-gray-200 dark:bg-slate-700 text-gray-500 cursor-not-allowed' : 'hover:bg-[#a6f2cf] dark:hover:bg-slate-800'}`}
               >
                 {isUploading ? (
                   <>
@@ -111,6 +138,9 @@ export default function Header({
                   </>
                 )}
               </button>
+              {uploadError && (
+                <p className="text-[9px] text-[#ba1a1a] px-2 pb-1 font-semibold">{uploadError}</p>
+              )}
 
               <button
                 onClick={logout}
