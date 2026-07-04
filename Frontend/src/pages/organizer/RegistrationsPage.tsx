@@ -35,6 +35,31 @@ export const RegistrationsPage: React.FC = () => {
           <p className="text-on-surface-variant mt-2 font-label-bold text-sm tracking-widest uppercase">View and manage event attendees.</p>
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto flex-wrap">
+          {/* Event Filter Dropdown */}
+          <div className="flex items-center border-4 border-on-background bg-background neo-shadow-sm focus-within:neo-shadow transition-shadow">
+            <select
+              value={eventId || 'all'}
+              onChange={(e) => {
+                const val = e.target.value;
+                const next = new URLSearchParams(params);
+                if (val === 'all') {
+                  next.delete('eventId');
+                } else {
+                  next.set('eventId', val);
+                }
+                setParams(next);
+              }}
+              className="px-4 py-2 font-label-bold text-sm bg-transparent focus:outline-none uppercase border-none cursor-pointer pr-8"
+            >
+              <option value="all">All Events</option>
+              {events.map((evt) => (
+                <option key={evt.id} value={evt.id}>
+                  {evt.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="flex flex-1 items-center border-4 border-on-background bg-background neo-shadow-sm focus-within:neo-shadow transition-shadow">
             <div className="pl-3 py-2 bg-surface-variant border-r-4 border-on-background">
               <Search className="w-5 h-5 stroke-[2.5]" />

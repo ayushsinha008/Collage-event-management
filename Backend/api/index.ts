@@ -27,13 +27,8 @@ const connectDB = async () => {
     });
   }
 
-  try {
-    await cachedConnectionPromise;
-    console.log('MongoDB Connected successfully.');
-  } catch (error) {
-    cachedConnectionPromise = null; // reset to allow retry on next request
-    console.error('MongoDB connection error:', error);
-  }
+  await cachedConnectionPromise;
+  console.log('MongoDB Connected successfully.');
 };
 
 // Export Vercel serverless function entrypoint
