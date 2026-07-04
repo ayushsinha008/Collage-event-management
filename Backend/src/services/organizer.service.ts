@@ -218,9 +218,15 @@ export class OrganizerService {
   }
 
   static async updateOrganizerSettings(user: AuthUser, data: any) {
+    const update: any = { organizerPreferences: data };
+    if (data?.account) {
+      if (data.account.name) update.name = data.account.name;
+      if (data.account.email) update.email = data.account.email;
+      if (data.account.organization) update.college = data.account.organization;
+    }
     const dbUser = await User.findByIdAndUpdate(
       user._id,
-      { organizerPreferences: data },
+      update,
       { new: true }
     );
     if (!dbUser) throw new ApiError(404, 'User not found');

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Zap, GraduationCap, HeartHandshake, Lock, ArrowRight } from 'lucide-react';
 
 export const AuthPage: React.FC = () => {
-  const { user, login, signInWithGoogle, upgradeUserRole } = useAuth();
+  const { user, login, signInWithGoogle, upgradeUserRole, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,11 +25,14 @@ export const AuthPage: React.FC = () => {
         navigate('/organizer/dashboard');
       } else if (user.role === 'volunteer') {
         navigate('/volunteer');
-      } else {
-        navigate(from);
+      } else if (user.role === 'student' && role === 'student') {
+        const targetIsStaffRoute = from.startsWith('/organizer') || from.startsWith('/volunteer');
+        if (!targetIsStaffRoute) {
+          navigate(from);
+        }
       }
     }
-  }, [user, navigate, from]);
+  }, [user, role, navigate, from]);
 
   const handleGoogleLogin = async () => {
     setError('');
@@ -68,11 +71,19 @@ export const AuthPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const user = await login('', password, role);
-      setSuccess(`Authenticated as ${user.name}! Redirecting...`);
-      setTimeout(() => {
-        navigate(role === 'organizer' ? '/organizer/dashboard' : '/volunteer');
-      }, 1000);
+      if (user && user.role === 'student') {
+        const upgradedUser = await upgradeUserRole(password, role as 'organizer' | 'volunteer');
+        setSuccess(`Linked successfully! Welcome ${upgradedUser.name}.`);
+        setTimeout(() => {
+          navigate(role === 'organizer' ? '/organizer/dashboard' : '/volunteer');
+        }, 1000);
+      } else {
+        const loggedInUser = await login('', password, role);
+        setSuccess(`Authenticated as ${loggedInUser.name}! Redirecting...`);
+        setTimeout(() => {
+          navigate(role === 'organizer' ? '/organizer/dashboard' : '/volunteer');
+        }, 1000);
+      }
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || 'Authentication failed.';
       setError(message);
@@ -172,10 +183,11 @@ export const AuthPage: React.FC = () => {
           </div>
         )}
 
-        {googleUserToUpgrade ? (
+        {googleUserToUpgrade || (user && user.role === 'student') ? (
           <form onSubmit={handleUpgradeSubmit} className="space-y-5">
-            <div className="bg-surface-container p-4 border-2 border-on-background text-xs font-semibold text-on-surface-variant uppercase">
-              Link Google Account: <span className="font-bold text-on-surface">{googleUserToUpgrade.email}</span>
+            <div className="bg-surface-container p-4 border-2 border-on-background text-xs font-semibold text-on-surface-variant uppercase text-center">
+              Link Google Account: <span className="font-bold text-on-surface">{(googleUserToUpgrade || user)?.email}</span>
+              <span className="block text-[10px] text-slate-500 mt-1 font-semibold normal-case">Enter the {role} passcode below to upgrade this Google ID.</span>
             </div>
             <div>
               <label className="block text-xs font-black uppercase tracking-widest mb-1.5">
@@ -204,14 +216,15 @@ export const AuthPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 setGoogleUserToUpgrade(null);
                 setError('');
                 setSuccess('');
+                await logout();
               }}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-black border-2 border-on-background py-2 text-xs font-label-bold uppercase cursor-pointer"
+              className="w-full bg-[#ffe5ec] hover:bg-[#ffd1db] text-[#ba1a1a] border-2 border-on-background py-2 text-xs font-label-bold uppercase cursor-pointer"
             >
-              Cancel Link
+              Sign Out Google Account
             </button>
           </form>
         ) : role === 'student' ? (
@@ -276,27 +289,6 @@ export const AuthPage: React.FC = () => {
                 )}
               </button>
             </form>
-
-            <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t-2 border-on-background/10"></div>
-              <span className="flex-shrink mx-4 text-xs font-bold text-slate-400 uppercase">Or Continue With</span>
-              <div className="flex-grow border-t-2 border-on-background/10"></div>
-            </div>
-
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center font-black text-sm py-3 border-4 border-black bg-white text-black neo-shadow-sm hover-lift press-down uppercase transition-all gap-2.5 cursor-pointer"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.76 5.76 0 0 1 8.2 12.8a5.76 5.76 0 0 1 5.79-5.8c1.498 0 2.861.57 3.905 1.5l3.185-3.185A10.22 10.22 0 0 0 14 1C7.373 1 2 6.373 2 13s5.373 12 12 12c6.9 0 10.74-4.909 10.74-11.236 0-.773-.082-1.355-.2-1.98H12.24Z"
-                />
-              </svg>
-              <span>Sign In with Google</span>
-            </button>
           </div>
         )}
       </div>
