@@ -19,25 +19,39 @@ const connectDB = async () => {
   }
 
   if (!cachedConnectionPromise) {
-    console.log('Connecting to MongoDB on Vercel (new connection)...');
+    const maskedUri = env.MONGO_URI.replace(/:([^@]+)@/, ':****@');
+    console.log(`Connecting to MongoDB on Vercel (new connection) with URI: ${maskedUri}`);
     cachedConnectionPromise = mongoose.connect(env.MONGO_URI, {
-      serverSelectionTimeoutMS: 4000,
+      serverSelectionTimeoutMS: 3000,
+      connectTimeoutMS: 3000,
     });
   }
 
   try {
     await cachedConnectionPromise;
     console.log('MongoDB Connected successfully.');
+
+    // Auto-seed empty Atlas database on first connect
+    try {
+      const EventModel = mongoose.model('Event');
+      const eventCount = await EventModel.countDocuments();
+      if (eventCount === 0) {
+        console.log('Database is empty. Seeding initial mock data...');
+        const { seedData } = require('../src/utils/seed');
+        await seedData(false, false);
+        console.log('Database seeded successfully.');
+      }
+    } catch (seedErr) {
+      console.error('Auto-seeding error:', seedErr);
+    }
   } catch (error) {
     cachedConnectionPromise = null; // reset to allow retry on next request
     console.error('MongoDB connection error:', error);
   }
 };
 
-// Middleware to connect to DB before handling requests
-app.use(async (req, res, next) => {
+// Export Vercel serverless function entrypoint
+export default async (req: any, res: any) => {
   await connectDB();
-  next();
-});
-
-export default app;
+  return app(req, res);
+};

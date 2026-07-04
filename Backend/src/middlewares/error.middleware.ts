@@ -42,6 +42,12 @@ export const errorMiddleware = (
     errors = issues.map((e: any) => `${e.path?.join('.')}: ${e.message}`);
   }
 
+  // Mongoose connection buffering error (offline connection)
+  if (err.name === 'MongooseError' && err.message.includes('before initial connection is complete')) {
+    statusCode = 503;
+    message = 'Database connection offline. If you are using MongoDB Atlas, please ensure you have whitelisted "0.0.0.0/0" (Allow Access from Anywhere) in your MongoDB Atlas Network Access settings.';
+  }
+
   console.error(`[ERROR MIDDLEWARE TRIGGERED]`, err.stack);
   
   if (process.env.NODE_ENV !== 'test') {
