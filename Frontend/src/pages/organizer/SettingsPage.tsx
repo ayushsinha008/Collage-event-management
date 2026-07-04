@@ -20,22 +20,68 @@ export const SettingsPage: React.FC = () => {
 
   useEffect(() => {
     (async () => {
-      const data = await organizerApi.getOrganizerSettings();
-      setSettings(data);
-      applyTheme(data.appearance.theme);
-      applyDensity(data.appearance.density);
+      try {
+        const data = await organizerApi.getOrganizerSettings();
+        const fallbackSettings: OrganizerSettings = {
+          account: {
+            name: data?.account?.name || '',
+            email: data?.account?.email || '',
+            organization: data?.account?.organization || 'Campus Events',
+            bio: data?.account?.bio || '',
+            website: data?.account?.website || '',
+            phone: data?.account?.phone || '',
+          },
+          notifications: {
+            newRegistration: data?.notifications?.newRegistration ?? true,
+            eventReminders: data?.notifications?.eventReminders ?? true,
+            weeklyDigest: data?.notifications?.weeklyDigest ?? true,
+            marketingEmails: data?.notifications?.marketingEmails ?? false,
+            pushBrowser: data?.notifications?.pushBrowser ?? true,
+            smsNotifications: data?.notifications?.smsNotifications ?? false,
+          },
+          appearance: {
+            theme: data?.appearance?.theme || 'light',
+            accent: data?.appearance?.accent || 'green',
+            density: data?.appearance?.density || 'comfortable',
+            reducedMotion: data?.appearance?.reducedMotion ?? false,
+          },
+          privacy: {
+            profileVisible: data?.privacy?.profileVisible ?? true,
+            showEventStats: data?.privacy?.showEventStats ?? true,
+            allowDirectMessages: data?.privacy?.allowDirectMessages ?? true,
+          }
+        };
+        setSettings(fallbackSettings);
+        applyTheme(fallbackSettings.appearance.theme);
+        applyDensity(fallbackSettings.appearance.density);
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+        // Fallback to local default settings if API fails
+        const localDefault: OrganizerSettings = {
+          account: { name: 'FestFlow Organizer', email: 'organizer@univ.edu', organization: 'Campus Events' },
+          notifications: { newRegistration: true, eventReminders: true, weeklyDigest: true, marketingEmails: false, pushBrowser: true, smsNotifications: false },
+          appearance: { theme: 'light', accent: 'green', density: 'comfortable', reducedMotion: false },
+          privacy: { profileVisible: true, showEventStats: true, allowDirectMessages: true }
+        };
+        setSettings(localDefault);
+      }
     })();
   }, []);
 
   const save = async () => {
     if (!settings) return;
     setSaving(true);
-    await organizerApi.updateOrganizerSettings(settings);
-    applyTheme(settings.appearance.theme);
-    applyDensity(settings.appearance.density);
-    setSaving(false);
-    setSavedFlash(true);
-    setTimeout(() => setSavedFlash(false), 1800);
+    try {
+      await organizerApi.updateOrganizerSettings(settings);
+      applyTheme(settings.appearance.theme);
+      applyDensity(settings.appearance.density);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1800);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!settings) return <div className="py-16 text-center font-label-bold uppercase">Loading settings…</div>;
