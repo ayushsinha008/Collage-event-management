@@ -31,7 +31,7 @@ export const OrganizerSidebar: React.FC<Props> = ({ onClose }) => {
   const navigate = useNavigate();
 
   return (
-    <aside className="w-64 min-h-screen bg-surface flex flex-col border-r-4 border-on-background z-20">
+    <aside className="hidden md:flex w-64 min-h-screen bg-surface flex-col border-r-4 border-on-background z-20 shrink-0">
       {/* Logo */}
       <div className="p-5 border-b-4 border-on-background bg-primary text-on-primary">
         <div className="flex items-center gap-2">
