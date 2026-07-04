@@ -1,6 +1,8 @@
 
 
+import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { applyTheme } from '../../utils/theme';
 
 interface SidebarProps {
   currentTab: 'dashboard' | 'events' | 'tickets';
@@ -19,14 +21,24 @@ export default function Sidebar({
 }: SidebarProps) {
 
   const { user, logout } = useAuth();
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('festflow_theme');
+    return saved === 'dark' ? 'dark' : 'light';
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    applyTheme(nextTheme);
+  };
 
   return (
-    <aside className="hidden md:flex w-64 h-screen border-r-4 border-on-background bg-[#e5deff] flex-col py-8 sticky top-0 z-50 overflow-y-auto">
+    <aside className="hidden md:flex w-64 h-screen border-r-4 border-on-background bg-[#e5deff] dark:bg-surface-container flex-col py-8 sticky top-0 z-50 overflow-y-auto">
       <div className="px-6 mb-12">
         <h1 className="font-headline-lg text-headline-lg font-bold text-on-background uppercase tracking-tighter flex items-center gap-1.5">
           <span className="material-symbols-outlined text-3xl text-primary">electric_bolt</span> FestFlow
         </h1>
-        <p className="font-label-bold text-label-bold text-slate-700">Student Panel</p>
+        <p className="font-label-bold text-label-bold text-slate-700 dark:text-slate-400">Student Panel</p>
       </div>
 
       <nav className="flex-grow space-y-2">
@@ -34,7 +46,7 @@ export default function Sidebar({
           onClick={() => { setCurrentTab('dashboard'); setSelectedEvent(null); }}
           className={`w-[calc(100%-16px)] m-2 flex items-center gap-3 px-4 py-3 rounded-none border-4 transition-all text-left ${currentTab === 'dashboard'
               ? 'bg-[#ffe24c] text-on-background border-on-background active-tab-shadow font-bold'
-              : 'text-on-background border-transparent hover:bg-white/50 hover:translate-x-1'
+              : 'text-on-background border-transparent hover:bg-white/50 dark:hover:bg-white/10 hover:translate-x-1'
             }`}
         >
           <span className="material-symbols-outlined">dashboard</span>
@@ -45,7 +57,7 @@ export default function Sidebar({
           onClick={() => { setCurrentTab('events'); setSelectedCategory('all'); setSelectedEvent(null); }}
           className={`w-[calc(100%-16px)] m-2 flex items-center gap-3 px-4 py-3 rounded-none border-4 transition-all text-left ${currentTab === 'events'
               ? 'bg-[#ffe24c] text-on-background border-on-background active-tab-shadow font-bold'
-              : 'text-on-background border-transparent hover:bg-white/50 hover:translate-x-1'
+              : 'text-on-background border-transparent hover:bg-white/50 dark:hover:bg-white/10 hover:translate-x-1'
             }`}
         >
           <span className="material-symbols-outlined">event</span>
@@ -56,34 +68,42 @@ export default function Sidebar({
           onClick={() => { setCurrentTab('tickets'); setSelectedEvent(null); }}
           className={`w-[calc(100%-16px)] m-2 flex items-center gap-3 px-4 py-3 rounded-none border-4 transition-all text-left ${currentTab === 'tickets'
               ? 'bg-[#ffe24c] text-on-background border-on-background active-tab-shadow font-bold'
-              : 'text-on-background border-transparent hover:bg-white/50 hover:translate-x-1'
+              : 'text-on-background border-transparent hover:bg-white/50 dark:hover:bg-white/10 hover:translate-x-1'
             }`}
         >
           <span className="material-symbols-outlined">confirmation_number</span>
           <span className="font-label-bold text-label-bold">My Tickets</span>
         </button>
-
-
       </nav>
 
       <div className="px-4 mt-auto space-y-4">
         {user && (
           <div className="border-t-4 border-on-background pt-4 flex flex-col gap-1 px-2">
-            <p className="font-label-bold text-[9px] text-[#1b6b4f] uppercase tracking-widest font-black">{user.role}</p>
+            <p className="font-label-bold text-[9px] text-[#1b6b4f] dark:text-[#a6f2cf] uppercase tracking-widest font-black">{user.role}</p>
             <p className="font-bold text-sm text-on-background truncate">{user.name}</p>
-            <p className="text-[10px] text-slate-700 truncate">{user.email}</p>
+            <p className="text-[10px] text-slate-700 dark:text-slate-400 truncate">{user.email}</p>
             
             <button
               onClick={logout}
-              className="mt-3 w-full bg-[#ffe5ec] hover:bg-[#ffccd5] border-2 border-on-background py-2 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 neo-shadow-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all"
+              className="mt-3 w-full bg-[#ffe5ec] hover:bg-[#ffccd5] dark:bg-[#3d2c31] dark:hover:bg-[#4d3c41] dark:text-[#ffccd5] border-2 border-on-background py-2 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 neo-shadow-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all"
             >
               <span className="material-symbols-outlined text-sm text-error">logout</span>
               Sign Out
             </button>
           </div>
         )}
+
         <div className="border-t-2 border-slate-700/20 pt-4 flex flex-col gap-2">
-          <span className="text-slate-700 text-xs px-4">Status: {error ? 'Offline (Mock)' : 'Online'}</span>
+          <button
+            onClick={toggleTheme}
+            className="w-full bg-surface border-2 border-on-background py-2 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 neo-shadow-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all text-on-background cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {theme === 'light' ? 'dark_mode' : 'light_mode'}
+            </span>
+            {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+          </button>
+          <span className="text-slate-700 dark:text-slate-400 text-xs px-2">Status: {error ? 'Offline (Mock)' : 'Online'}</span>
         </div>
       </div>
     </aside>
