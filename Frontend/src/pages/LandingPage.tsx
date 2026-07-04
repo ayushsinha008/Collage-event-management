@@ -26,11 +26,11 @@ const TICKER_ITEMS = [
   'Tech Hackathon 2026',
 ];
 
-const STATS = [
-  { value: '450+', label: 'Events hosted', bg: 'bg-primary-fixed' },
-  { value: '12k+', label: 'Tickets issued', bg: 'bg-tertiary-fixed' },
-  { value: '98%', label: 'Check-in accuracy', bg: 'bg-secondary-fixed' },
-  { value: '4 min', label: 'Avg setup time', bg: 'bg-error-container' },
+const HERO_DETAILS = [
+  { title: 'Instant RSVP', desc: 'Register with a single tap', bg: 'bg-primary-fixed' },
+  { title: 'QR Tickets', desc: 'Secure entry codes on your phone', bg: 'bg-tertiary-fixed' },
+  { title: 'Live Feed', desc: 'Watch attendee counts update in real-time', bg: 'bg-secondary-fixed' },
+  { title: 'Smart Alerts', desc: 'Direct updates to all students', bg: 'bg-error-container' },
 ];
 
 const FEATURES = [
@@ -219,12 +219,6 @@ export const LandingPage: React.FC = () => {
               >
                 Get Started Free <ArrowRight className="w-4 h-4 stroke-[3]" />
               </Link>
-              <Link
-                to="/login"
-                className="flex items-center gap-2 bg-surface px-7 py-3.5 font-extrabold uppercase text-sm border-[3px] border-on-background neo-shadow-sm hover-lift press-down transition-all"
-              >
-                Organizer Demo
-              </Link>
             </div>
             <div className="flex flex-wrap gap-5">
               {['No credit card', 'Free for clubs', 'Setup in 2 min'].map((t) => (
@@ -237,25 +231,21 @@ export const LandingPage: React.FC = () => {
 
           {/* Stat grid + live event preview */}
           <div className="grid grid-cols-2 gap-3">
-            {STATS.map((s) => (
-              <div key={s.label} className={`border-4 border-on-background p-5 flex flex-col gap-1.5 ${s.bg}`}>
-                <div className="font-headline font-extrabold text-4xl leading-none tracking-tight">{s.value}</div>
-                <div className="text-[11px] font-extrabold uppercase tracking-wide">{s.label}</div>
+            {HERO_DETAILS.map((d) => (
+              <div key={d.title} className={`border-4 border-on-background p-5 flex flex-col justify-between min-h-[120px] ${d.bg}`}>
+                <div className="font-headline font-extrabold text-2xl uppercase tracking-tight leading-none">{d.title}</div>
+                <div className="text-[11px] font-bold text-on-surface-variant leading-snug mt-2">{d.desc}</div>
               </div>
             ))}
-            <div className="col-span-2 border-4 border-on-background bg-surface p-4 flex items-center gap-4">
-              <div className="bg-tertiary-fixed border-4 border-on-background p-2.5 flex-shrink-0">
-                <Calendar className="w-5 h-5 stroke-[2.5]" />
+            <div className="col-span-2 border-4 border-on-background bg-[#ffe24c] p-4 flex items-center gap-4 neo-shadow-sm">
+              <div className="bg-surface border-4 border-on-background p-2.5 flex-shrink-0">
+                <Zap className="w-5 h-5 stroke-[2.5] text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-headline font-extrabold uppercase text-sm truncate">Neon Pulse Music Festival</div>
+                <div className="font-headline font-extrabold uppercase text-sm">Empowering Student Communities</div>
                 <div className="text-[11px] font-bold uppercase tracking-wide text-on-surface-variant mt-0.5">
-                  Oct 24–26 · Campus Stadium
+                  Built to simplify registrations & club operations.
                 </div>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <div className="font-headline font-extrabold text-2xl leading-none">450</div>
-                <div className="text-[10px] font-extrabold uppercase tracking-wide text-on-surface-variant">attending</div>
               </div>
             </div>
           </div>
