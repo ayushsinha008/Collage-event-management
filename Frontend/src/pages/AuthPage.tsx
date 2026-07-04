@@ -37,7 +37,8 @@ export const AuthPage: React.FC = () => {
       setSuccess(`Authenticated as ${user.name}! Redirecting...`);
       setTimeout(() => navigate(from), 1000);
     } catch (err: any) {
-      setError(err.message || 'Google Authentication failed. Please try again.');
+      const message = err.response?.data?.message || err.message || 'Google Authentication failed. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
