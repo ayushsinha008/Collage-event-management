@@ -253,8 +253,8 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col md:flex-row text-white overflow-hidden font-body">
-      <div className="md:w-80 w-full bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 p-6 flex flex-col shrink-0 overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col lg:flex-row text-white overflow-hidden font-body">
+      <div className="lg:w-80 w-full bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-800 p-6 flex flex-col shrink-0 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-orange-500 border-2 border-white flex items-center justify-center">
@@ -320,7 +320,7 @@ export default function QRScanner({ onCheckIn, onClose }: QRScannerProps) {
         </p>
       </div>
 
-      <div className="flex-1 relative bg-slate-950 flex flex-col items-center justify-center p-4 md:p-8 min-h-[360px]">
+      <div className="flex-1 relative bg-slate-950 flex flex-col items-center justify-center p-4 lg:p-8 min-h-[360px]">
         {!scanResult && (
           <div className="relative w-full max-w-md">
             <div className="rounded-2xl border-4 border-orange-500 overflow-hidden bg-black min-h-[320px]">
