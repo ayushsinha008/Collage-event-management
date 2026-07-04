@@ -17,9 +17,10 @@ export const OrganizerTopbar: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       const list = await organizerApi.getNotifications();
-      setNotifications(list);
+      setNotifications(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
+      setNotifications([]);
     }
   };
 
@@ -40,12 +41,14 @@ export const OrganizerTopbar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = Array.isArray(notifications)
+    ? notifications.filter((n) => !n.read).length
+    : 0;
 
   const handleMarkAllRead = async () => {
     try {
       await organizerApi.readAllNotifications();
-      setNotifications(notifications.map((n) => ({ ...n, read: true })));
+      setNotifications(Array.isArray(notifications) ? notifications.map((n) => ({ ...n, read: true })) : []);
     } catch (err) {
       console.error(err);
     }
@@ -55,7 +58,7 @@ export const OrganizerTopbar: React.FC = () => {
     if (read) return;
     try {
       await organizerApi.readNotification(id);
-      setNotifications(notifications.map((n) => (n._id === id ? { ...n, read: true } : n)));
+      setNotifications(Array.isArray(notifications) ? notifications.map((n) => (n._id === id ? { ...n, read: true } : n)) : []);
     } catch (err) {
       console.error(err);
     }
@@ -113,7 +116,7 @@ export const OrganizerTopbar: React.FC = () => {
 
               {/* List */}
               <div className="overflow-y-auto divide-y-2 divide-on-background flex-1 max-h-[300px]">
-                {notifications.length === 0 ? (
+                {!Array.isArray(notifications) || notifications.length === 0 ? (
                   <div className="p-4 text-center text-xs font-label-bold text-on-surface-variant uppercase">
                     No notifications yet.
                   </div>
