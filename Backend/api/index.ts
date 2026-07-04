@@ -30,20 +30,6 @@ const connectDB = async () => {
   try {
     await cachedConnectionPromise;
     console.log('MongoDB Connected successfully.');
-
-    // Auto-seed empty Atlas database on first connect
-    try {
-      const EventModel = mongoose.model('Event');
-      const eventCount = await EventModel.countDocuments();
-      if (eventCount === 0) {
-        console.log('Database is empty. Seeding initial mock data...');
-        const { seedData } = require('../src/utils/seed');
-        await seedData(false, false);
-        console.log('Database seeded successfully.');
-      }
-    } catch (seedErr) {
-      console.error('Auto-seeding error:', seedErr);
-    }
   } catch (error) {
     cachedConnectionPromise = null; // reset to allow retry on next request
     console.error('MongoDB connection error:', error);

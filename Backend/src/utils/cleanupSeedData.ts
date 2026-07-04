@@ -7,6 +7,7 @@ import { env } from '../config/env.config';
 import { logger } from './logger';
 
 const SEED_EVENT_TITLE = /^Tech Fest Event \d+$/i;
+const SEED_EVENT_DESCRIPTION = /^Description for awesome event \d+$/i;
 const SEED_USER_EMAIL = /@festflow\.com$/i;
 
 export const cleanupSeedData = async (shouldConnect = true, shouldExit = true) => {
@@ -16,7 +17,9 @@ export const cleanupSeedData = async (shouldConnect = true, shouldExit = true) =
   }
 
   try {
-    const seedEvents = await Event.find({ title: SEED_EVENT_TITLE }).select('_id title');
+    const seedEvents = await Event.find({
+      $or: [{ title: SEED_EVENT_TITLE }, { description: SEED_EVENT_DESCRIPTION }],
+    }).select('_id title');
     const seedEventIds = seedEvents.map((e) => e._id);
 
     let deletedTickets = 0;
