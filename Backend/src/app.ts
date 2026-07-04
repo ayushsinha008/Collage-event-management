@@ -42,7 +42,10 @@ app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (env.NODE_ENV === 'development' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+      if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+      if (/^https:\/\/.*\.vercel\.app$/.test(origin)) {
         return callback(null, true);
       }
       if (origin === env.FRONTEND_URL) return callback(null, true);
