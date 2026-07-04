@@ -1,38 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Bell, LogOut, Search, CheckCheck, Zap } from 'lucide-react';
+import { Bell, LogOut, CheckCheck, Zap } from 'lucide-react';
 import { useOrganizerContext } from '../../../context/OrganizerContext';
 import { UserAvatar } from '../../common/UserAvatar';
 import { organizerApi } from '../../../services/organizerApi';
 
 export const OrganizerTopbar: React.FC = () => {
   const { organizer, logout } = useOrganizerContext();
-  const [params, setParams] = useSearchParams();
-  const search = params.get('q') ?? '';
-  const [localSearch, setLocalSearch] = useState(search);
-
-  // Keep local search input value in sync when the URL changes from elsewhere
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
-
-  // Debounce updating URL parameter q
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const next = new URLSearchParams(params);
-      const currentQ = next.get('q') ?? '';
-      if (localSearch !== currentQ) {
-        if (localSearch) {
-          next.set('q', localSearch);
-        } else {
-          next.delete('q');
-        }
-        setParams(next, { replace: true });
-      }
-    }, 450);
-
-    return () => clearTimeout(handler);
-  }, [localSearch, params, setParams]);
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -95,19 +68,7 @@ export const OrganizerTopbar: React.FC = () => {
         <span className="text-sm font-extrabold tracking-tight" style={{ textShadow: '1px 1px 0 #000' }}>FESTFLOW</span>
       </div>
 
-      <div className="flex-grow md:flex-1 max-w-xs md:max-w-md min-w-0">
-        <div className="flex items-center border-4 border-on-background bg-background neo-shadow-sm focus-within:neo-shadow transition-shadow">
-          <div className="pl-2 md:pl-3 py-1.5 md:py-2 bg-background border-r-4 border-on-background">
-            <Search className="w-4 h-4 stroke-[3]" />
-          </div>
-          <input
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="SEARCH..."
-            className="w-full px-2 md:px-4 py-1.5 md:py-2 font-label-bold text-xs md:text-sm bg-transparent focus:outline-none uppercase placeholder-on-surface-variant min-w-0"
-          />
-        </div>
-      </div>
+      <div className="flex-grow md:flex-1 max-w-xs md:max-w-md min-w-0" />
 
       <div className="flex items-center gap-6">
         <div className="relative" ref={dropdownRef}>
