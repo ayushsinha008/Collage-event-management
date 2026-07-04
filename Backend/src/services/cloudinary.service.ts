@@ -13,12 +13,9 @@ const DEFAULT_EVENT_PLACEHOLDER = 'https://images.unsplash.com/photo-15012816687
 
 export const uploadImage = async (filePath: string, folder: string): Promise<string> => {
   const isDummyConfig = !env.CLOUDINARY_CLOUD_NAME || env.CLOUDINARY_CLOUD_NAME === 'your-cloud-name';
-  if (isDummyConfig && (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test')) {
-    logger.warn('⚠️ Cloudinary is not configured. Using placeholder/original image fallback.');
-    if (filePath.startsWith('http')) {
-      return filePath;
-    }
-    return DEFAULT_EVENT_PLACEHOLDER;
+  if (isDummyConfig) {
+    logger.warn('⚠️ Cloudinary is not configured. Returning original file/base64 fallback.');
+    return filePath;
   }
 
   try {
@@ -29,14 +26,8 @@ export const uploadImage = async (filePath: string, folder: string): Promise<str
     });
     return result.secure_url;
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-      logger.warn(`⚠️ Cloudinary upload failed (${error.message}). Falling back to placeholder.`);
-      if (filePath.startsWith('http')) {
-        return filePath;
-      }
-      return DEFAULT_EVENT_PLACEHOLDER;
-    }
-    throw new ApiError(500, `Cloudinary upload failed: ${error.message}`);
+    logger.warn(`⚠️ Cloudinary upload failed (${error.message}). Returning original file/base64 fallback.`);
+    return filePath;
   }
 };
 

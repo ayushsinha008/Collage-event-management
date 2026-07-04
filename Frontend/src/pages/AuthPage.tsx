@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Zap, GraduationCap, HeartHandshake, Lock, ArrowRight } from 'lucide-react';
 
 export const AuthPage: React.FC = () => {
-  const { user, login, signInWithGoogle } = useAuth();
+  const { user, login, signInWithGoogle, upgradeUserRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -13,6 +13,9 @@ export const AuthPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const [googleUserToUpgrade, setGoogleUserToUpgrade] = useState<any | null>(null);
+  const [upgradePasscode, setUpgradePasscode] = useState('');
 
   const from = (location.state as any)?.from?.pathname || '/';
 
@@ -33,9 +36,23 @@ export const AuthPage: React.FC = () => {
     setSuccess('');
     setLoading(true);
     try {
-      const user = await signInWithGoogle();
-      setSuccess(`Authenticated as ${user.name}! Redirecting...`);
-      setTimeout(() => navigate(from), 1000);
+      const loggedInUser = await signInWithGoogle();
+      
+      if (role === 'student') {
+        setSuccess(`Welcome back, ${loggedInUser.name}!`);
+        setTimeout(() => navigate(from), 1000);
+        return;
+      }
+
+      if (loggedInUser.role === role) {
+        setSuccess(`Authenticated as ${loggedInUser.name}! Redirecting...`);
+        setTimeout(() => {
+          navigate(role === 'organizer' ? '/organizer/dashboard' : '/volunteer');
+        }, 1000);
+      } else {
+        setGoogleUserToUpgrade(loggedInUser);
+        setSuccess('Google account authenticated. Please verify the passcode to authorize access.');
+      }
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || 'Google Authentication failed. Please try again.';
       setError(message);
@@ -64,11 +81,34 @@ export const AuthPage: React.FC = () => {
     }
   };
 
+  const handleUpgradeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      const upgradedUser = await upgradeUserRole(upgradePasscode, role as 'organizer' | 'volunteer');
+      setSuccess(`Account linked successfully! Welcome ${upgradedUser.name}.`);
+      setGoogleUserToUpgrade(null);
+      setUpgradePasscode('');
+      setTimeout(() => {
+        navigate(role === 'organizer' ? '/organizer/dashboard' : '/volunteer');
+      }, 1000);
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Authorization failed.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRoleChange = (newRole: 'student' | 'organizer' | 'volunteer') => {
     setRole(newRole);
     setError('');
     setSuccess('');
     setPassword('');
+    setGoogleUserToUpgrade(null);
+    setUpgradePasscode('');
   };
 
   return (
@@ -132,7 +172,49 @@ export const AuthPage: React.FC = () => {
           </div>
         )}
 
-        {role === 'student' ? (
+        {googleUserToUpgrade ? (
+          <form onSubmit={handleUpgradeSubmit} className="space-y-5">
+            <div className="bg-surface-container p-4 border-2 border-on-background text-xs font-semibold text-on-surface-variant uppercase">
+              Link Google Account: <span className="font-bold text-on-surface">{googleUserToUpgrade.email}</span>
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase tracking-widest mb-1.5">
+                Enter passcode to authorize
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
+                  <Lock className="w-5 h-5" />
+                </span>
+                <input
+                  type="password"
+                  required
+                  value={upgradePasscode}
+                  onChange={(e) => setUpgradePasscode(e.target.value)}
+                  className="w-full border-4 border-on-background bg-background pl-11 pr-4 py-3 font-label-bold text-sm focus:outline-none focus:neo-shadow-sm transition-all"
+                  placeholder="••••"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary text-white font-black text-base py-4 border-4 border-on-background neo-shadow-sm hover-lift press-down uppercase transition-all cursor-pointer"
+            >
+              Link and Access
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setGoogleUserToUpgrade(null);
+                setError('');
+                setSuccess('');
+              }}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-black border-2 border-on-background py-2 text-xs font-label-bold uppercase cursor-pointer"
+            >
+              Cancel Link
+            </button>
+          </form>
+        ) : role === 'student' ? (
           <button
             type="button"
             disabled={loading}
@@ -154,45 +236,68 @@ export const AuthPage: React.FC = () => {
             )}
           </button>
         ) : (
-          <form onSubmit={handleStaffSubmit} className="space-y-5">
-            <div>
-              <label className="block text-xs font-black uppercase tracking-widest mb-1.5">
-                {role === 'organizer' ? 'Admin Access Pass' : 'Staff Scanner Key'}
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
-                  <Lock className="w-5 h-5" />
-                </span>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full border-4 border-on-background bg-background pl-11 pr-4 py-3 font-label-bold text-sm focus:outline-none focus:neo-shadow-sm transition-all"
-                  placeholder="••••••••"
-                />
+          <div className="space-y-6">
+            <form onSubmit={handleStaffSubmit} className="space-y-5">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest mb-1.5">
+                  {role === 'organizer' ? 'Admin Access Pass' : 'Staff Scanner Key'}
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
+                    <Lock className="w-5 h-5" />
+                  </span>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full border-4 border-on-background bg-background pl-11 pr-4 py-3 font-label-bold text-sm focus:outline-none focus:neo-shadow-sm transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
               </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full flex items-center justify-center font-black text-base py-4 border-4 border-on-background neo-shadow-sm hover-lift press-down uppercase transition-all disabled:opacity-50 mt-4 gap-2 cursor-pointer ${
+                  role === 'organizer'
+                    ? 'bg-[#a6f2cf] hover:bg-[#91e1be]'
+                    : 'bg-[#ffe5ec] hover:bg-[#ffd1db]'
+                }`}
+              >
+                {loading ? (
+                  <span>VERIFYING CREDENTIALS...</span>
+                ) : (
+                  <>
+                    <span>ENTER HUB</span>
+                    <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t-2 border-on-background/10"></div>
+              <span className="flex-shrink mx-4 text-xs font-bold text-slate-400 uppercase">Or Continue With</span>
+              <div className="flex-grow border-t-2 border-on-background/10"></div>
             </div>
 
             <button
-              type="submit"
+              type="button"
               disabled={loading}
-              className={`w-full flex items-center justify-center font-black text-base py-4 border-4 border-on-background neo-shadow-sm hover-lift press-down uppercase transition-all disabled:opacity-50 mt-4 gap-2 ${
-                role === 'organizer'
-                  ? 'bg-[#a6f2cf] hover:bg-[#91e1be]'
-                  : 'bg-[#ffe5ec] hover:bg-[#ffd1db]'
-              }`}
+              onClick={handleGoogleLogin}
+              className="w-full flex items-center justify-center font-black text-sm py-3 border-4 border-black bg-white text-black neo-shadow-sm hover-lift press-down uppercase transition-all gap-2.5 cursor-pointer"
             >
-              {loading ? (
-                <span>VERIFYING CREDENTIALS...</span>
-              ) : (
-                <>
-                  <span>ENTER HUB</span>
-                  <ArrowRight className="w-5 h-5 stroke-[2.5]" />
-                </>
-              )}
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="#EA4335"
+                  d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.76 5.76 0 0 1 8.2 12.8a5.76 5.76 0 0 1 5.79-5.8c1.498 0 2.861.57 3.905 1.5l3.185-3.185A10.22 10.22 0 0 0 14 1C7.373 1 2 6.373 2 13s5.373 12 12 12c6.9 0 10.74-4.909 10.74-11.236 0-.773-.082-1.355-.2-1.98H12.24Z"
+                />
+              </svg>
+              <span>Sign In with Google</span>
             </button>
-          </form>
+          </div>
         )}
       </div>
     </div>

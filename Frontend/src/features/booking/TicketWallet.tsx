@@ -60,12 +60,12 @@ export default function TicketWallet({
             const ticketCode = ticketDetail.ticketCode;
 
             return (
-              <div key={ticketDetail._id || ticketCode} className="bg-white border-4 border-on-background neo-shadow ticket-edge flex flex-col">
-                <div className="p-6 border-b-2 border-dashed border-on-background flex justify-between items-center bg-[#dcd5fd]">
-                  <span className="font-label-bold uppercase text-xs tracking-wider font-semibold text-slate-800">
+              <div key={ticketDetail._id || ticketCode} className="bg-surface border-4 border-on-background neo-shadow ticket-edge flex flex-col">
+                <div className="p-6 border-b-2 border-dashed border-on-background flex justify-between items-center bg-[#dcd5fd] dark:bg-surface-container-high">
+                  <span className="font-label-bold uppercase text-xs tracking-wider font-semibold text-slate-800 dark:text-slate-200">
                     CAMPUS VIP ENTRY PASS
                   </span>
-                  <span className="bg-white border-2 border-on-background px-2 py-0.5 font-bold text-xs">
+                  <span className="bg-white dark:bg-background border-2 border-on-background px-2 py-0.5 font-bold text-xs">
                     FREE
                   </span>
                 </div>
@@ -74,7 +74,7 @@ export default function TicketWallet({
                     <h4 className="font-headline-md text-xl font-bold uppercase mb-2">
                       {event.title}
                     </h4>
-                    <div className="space-y-1.5 text-xs font-bold text-slate-500 uppercase">
+                    <div className="space-y-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">
                       <p className="flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-sm">calendar_month</span> {event.date} • {event.time}
                       </p>
@@ -95,7 +95,7 @@ export default function TicketWallet({
                       )}
                     </div>
                     {ticketCode && (
-                      <span className="font-label-bold text-xs uppercase tracking-widest text-[#1b6b4f]">
+                      <span className="font-label-bold text-xs uppercase tracking-widest text-[#1b6b4f] dark:text-[#a6f2cf]">
                         {ticketCode}
                       </span>
                     )}
@@ -105,7 +105,7 @@ export default function TicketWallet({
                   </div>
                 </div>
 
-                <div className="p-4 bg-on-background text-white flex justify-between items-center">
+                <div className="p-4 bg-on-background dark:bg-black text-white dark:text-slate-300 flex justify-between items-center">
                   <span className="text-xs font-bold uppercase text-[#a6f2cf]">Verified Pass</span>
                   <button 
                     onClick={() => handleRegister(event)}

@@ -133,7 +133,7 @@ export default function EventDashboard({
                         </p>
                       </div>
                       <div className="flex items-center justify-between">
-                        <div className="text-xs font-bold text-slate-500">
+                        <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
                           {event.rsvps} attending
                         </div>
                         <button 
@@ -142,7 +142,7 @@ export default function EventDashboard({
                           className={`px-6 py-2 border-4 border-on-background font-label-bold uppercase text-xs hover-lift press-down ${
                             hasJoined
                               ? 'bg-[#ba1a1a] text-white border-[#ba1a1a]'
-                              : 'bg-on-background text-white hover:bg-primary'
+                              : 'bg-on-background text-background dark:text-black hover:bg-primary'
                           } disabled:opacity-50`}
                         >
                           {registeringEventId === event.id 
@@ -165,7 +165,7 @@ export default function EventDashboard({
                   onClick={() => setSelectedEvent(event)}
                   className="md:col-span-4 group cursor-pointer"
                 >
-                  <div className="bg-[#e5deff] border-4 border-on-background neo-shadow hover-lift h-full flex flex-col justify-between">
+                  <div className="bg-[#e5deff] dark:bg-surface-container border-4 border-on-background neo-shadow hover-lift h-full flex flex-col justify-between">
                     <div className="p-4 border-b-4 border-on-background bg-on-background text-[#a6f2cf] flex justify-between items-center">
                       <span className="font-label-bold uppercase text-xs">{event.category || 'EVENT'}</span>
                       <span className="material-symbols-outlined">star</span>
@@ -175,7 +175,7 @@ export default function EventDashboard({
                         <h4 className="font-headline-md text-headline-md mb-2 uppercase group-hover:text-primary transition-colors line-clamp-2">
                           {event.title}
                         </h4>
-                        <p className="text-on-secondary-fixed-variant text-sm mb-4 line-clamp-3">
+                        <p className="text-on-secondary-fixed-variant dark:text-slate-300 text-sm mb-4 line-clamp-3">
                           {event.description}
                         </p>
                       </div>

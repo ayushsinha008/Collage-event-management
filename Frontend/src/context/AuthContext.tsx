@@ -19,6 +19,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<User>;
   logout: () => Promise<void>;
   updatePfp: (url: string) => Promise<boolean>;
+  upgradeUserRole: (passcode: string, role: 'organizer' | 'volunteer') => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -213,6 +214,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const upgradeUserRole = async (passcode: string, role: 'organizer' | 'volunteer'): Promise<User> => {
+    await studentApi.verifyStaffRole(passcode, role);
+    const firebaseUid = auth.currentUser?.uid;
+    if (!firebaseUid) throw new Error('No active authentication session.');
+    const profile = await syncUserFromBackend(firebaseUid);
+    if (!profile) throw new Error('Failed to synchronize user session.');
+    return profile;
+  };
+
   const logout = async () => {
     await signOut(auth);
     localStorage.removeItem('auth_user');
@@ -221,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signInWithGoogle, logout, updatePfp }}>
+    <AuthContext.Provider value={{ user, loading, login, signInWithGoogle, logout, updatePfp, upgradeUserRole }}>
       {children}
     </AuthContext.Provider>
   );
