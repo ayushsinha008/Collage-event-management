@@ -10,6 +10,64 @@ const SEED_EVENT_TITLE = /^Tech Fest Event \d+$/i;
 const SEED_EVENT_DESCRIPTION = /^Description for awesome event \d+$/i;
 const SEED_USER_EMAIL = /@festflow\.com$/i;
 
+export type SeedCleanupResult = {
+  deletedEvents: number;
+  deletedRegistrations: number;
+  deletedTickets: number;
+  deletedUsers: number;
+  eventTitles: string[];
+};
+
+export const runSeedCleanup = async (): Promise<SeedCleanupResult> => {
+  const seedEvents = await Event.find({
+    $or: [{ title: SEED_EVENT_TITLE }, { description: SEED_EVENT_DESCRIPTION }],
+  }).select('_id title');
+  const seedEventIds = seedEvents.map((e) => e._id);
+  const eventTitles = seedEvents.map((e) => e.title);
+
+  let deletedTickets = 0;
+  let deletedRegistrations = 0;
+  let deletedEvents = 0;
+
+  if (seedEventIds.length > 0) {
+    const seedRegs = await Registration.find({ event: { $in: seedEventIds } }).select('_id');
+    const regIds = seedRegs.map((r) => r._id);
+
+    if (regIds.length > 0) {
+      const ticketResult = await Ticket.deleteMany({ registration: { $in: regIds } });
+      deletedTickets = ticketResult.deletedCount ?? 0;
+    }
+
+    const regResult = await Registration.deleteMany({ event: { $in: seedEventIds } });
+    deletedRegistrations = regResult.deletedCount ?? 0;
+
+    const eventResult = await Event.deleteMany({ _id: { $in: seedEventIds } });
+    deletedEvents = eventResult.deletedCount ?? 0;
+    logger.info(`Removed ${deletedEvents} seed events`);
+    eventTitles.forEach((title) => logger.info(`  - ${title}`));
+  } else {
+    logger.info('No seed events found (Tech Fest Event 1–30)');
+  }
+
+  const seedUsers = await User.find({ email: SEED_USER_EMAIL }).select('_id email');
+  let deletedUsers = 0;
+  if (seedUsers.length > 0) {
+    const userResult = await User.deleteMany({ email: SEED_USER_EMAIL });
+    deletedUsers = userResult.deletedCount ?? 0;
+    logger.info(`Removed ${deletedUsers} seed users`);
+  } else {
+    logger.info('No seed users found (@festflow.com)');
+  }
+
+  return {
+    deletedEvents,
+    deletedRegistrations,
+    deletedTickets,
+    deletedUsers,
+    eventTitles,
+  };
+};
+
 export const cleanupSeedData = async (shouldConnect = true, shouldExit = true) => {
   if (shouldConnect) {
     await mongoose.connect(env.MONGO_URI);
@@ -17,47 +75,12 @@ export const cleanupSeedData = async (shouldConnect = true, shouldExit = true) =
   }
 
   try {
-    const seedEvents = await Event.find({
-      $or: [{ title: SEED_EVENT_TITLE }, { description: SEED_EVENT_DESCRIPTION }],
-    }).select('_id title');
-    const seedEventIds = seedEvents.map((e) => e._id);
-
-    let deletedTickets = 0;
-    let deletedRegistrations = 0;
-
-    if (seedEventIds.length > 0) {
-      const seedRegs = await Registration.find({ event: { $in: seedEventIds } }).select('_id');
-      const regIds = seedRegs.map((r) => r._id);
-
-      if (regIds.length > 0) {
-        const ticketResult = await Ticket.deleteMany({ registration: { $in: regIds } });
-        deletedTickets = ticketResult.deletedCount ?? 0;
-      }
-
-      const regResult = await Registration.deleteMany({ event: { $in: seedEventIds } });
-      deletedRegistrations = regResult.deletedCount ?? 0;
-
-      const eventResult = await Event.deleteMany({ _id: { $in: seedEventIds } });
-      logger.info(`Removed ${eventResult.deletedCount ?? 0} seed events`);
-      seedEvents.forEach((e) => logger.info(`  - ${e.title}`));
-    } else {
-      logger.info('No seed events found (Tech Fest Event 1–30)');
-    }
-
-    const seedUsers = await User.find({ email: SEED_USER_EMAIL }).select('_id email');
-    if (seedUsers.length > 0) {
-      const userResult = await User.deleteMany({ email: SEED_USER_EMAIL });
-      logger.info(`Removed ${userResult.deletedCount ?? 0} seed users`);
-      seedUsers.forEach((u) => logger.info(`  - ${u.email}`));
-    } else {
-      logger.info('No seed users found (@festflow.com)');
-    }
-
+    const result = await runSeedCleanup();
     logger.info(
-      `Cleanup complete. Events: ${seedEventIds.length}, registrations: ${deletedRegistrations}, tickets: ${deletedTickets}`
+      `Cleanup complete. Events: ${result.deletedEvents}, registrations: ${result.deletedRegistrations}, tickets: ${result.deletedTickets}, users: ${result.deletedUsers}`
     );
-
     if (shouldExit) process.exit(0);
+    return result;
   } catch (error) {
     logger.error('Seed cleanup failed:', error);
     if (shouldExit) process.exit(1);
