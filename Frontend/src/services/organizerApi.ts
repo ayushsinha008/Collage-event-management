@@ -41,21 +41,8 @@ API.interceptors.response.use((response) => {
   return response;
 });
 
-const withMockFallback = async <T>(apiCall: () => Promise<T>, mockData: T): Promise<T> => {
-  try {
-    const res = await apiCall();
-    if (res && typeof res === 'object' && 'success' in res && (res as any).success === false) {
-      throw new Error((res as any).message || 'API request failed');
-    }
-    return res;
-  } catch (err: any) {
-    if (err.response && err.response.status >= 400 && err.response.status < 500) {
-      throw err;
-    }
-    console.warn('Backend server offline or error, using mock data fallback.', err);
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    return mockData;
-  }
+const withMockFallback = async <T>(apiCall: () => Promise<T>, _mockData: T): Promise<T> => {
+  return await apiCall();
 };
 
 // --- MOCK DATA ---
