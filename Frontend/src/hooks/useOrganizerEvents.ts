@@ -16,6 +16,7 @@ export const useOrganizerEvents = (initialFilters: EventFilters = {}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<EventFilters>({ ...initialFilters, search: urlSearch });
+  const [debouncedSearch, setDebouncedSearch] = useState(urlSearch);
 
   // Sync URL search param to filters state
   useEffect(() => {
@@ -25,24 +26,37 @@ export const useOrganizerEvents = (initialFilters: EventFilters = {}) => {
     });
   }, [urlSearch]);
 
-  // Sync filters state to URL search param
+  // Debounce search query
   useEffect(() => {
-    const nextSearch = filters.search ?? '';
-    if (params.get('q') !== nextSearch) {
-      const next = new URLSearchParams(params);
-      if (nextSearch) {
-        next.set('q', nextSearch);
-      } else {
-        next.delete('q');
+    const handler = setTimeout(() => {
+      setDebouncedSearch(filters.search ?? '');
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [filters.search]);
+
+  // Sync debounced search to URL params
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    if (debouncedSearch) {
+      if (next.get('q') !== debouncedSearch) {
+        next.set('q', debouncedSearch);
+        setParams(next, { replace: true });
       }
-      setParams(next, { replace: true });
+    } else {
+      if (next.has('q')) {
+        next.delete('q');
+        setParams(next, { replace: true });
+      }
     }
-  }, [filters.search, params, setParams]);
+  }, [debouncedSearch, params, setParams]);
 
   const fetch = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await organizerApi.getMyEvents(filters);
+      const data = await organizerApi.getMyEvents({
+        ...filters,
+        search: debouncedSearch,
+      });
       setEvents(data);
       setError(null);
     } catch (e: any) {
@@ -50,7 +64,7 @@ export const useOrganizerEvents = (initialFilters: EventFilters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [debouncedSearch, filters.status, filters.category]);
 
   useEffect(() => {
     fetch();

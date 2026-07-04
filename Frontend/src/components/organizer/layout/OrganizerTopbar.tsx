@@ -9,6 +9,30 @@ export const OrganizerTopbar: React.FC = () => {
   const { organizer, logout } = useOrganizerContext();
   const [params, setParams] = useSearchParams();
   const search = params.get('q') ?? '';
+  const [localSearch, setLocalSearch] = useState(search);
+
+  // Keep local search input value in sync when the URL changes from elsewhere
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  // Debounce updating URL parameter q
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const next = new URLSearchParams(params);
+      const currentQ = next.get('q') ?? '';
+      if (localSearch !== currentQ) {
+        if (localSearch) {
+          next.set('q', localSearch);
+        } else {
+          next.delete('q');
+        }
+        setParams(next, { replace: true });
+      }
+    }, 450);
+
+    return () => clearTimeout(handler);
+  }, [localSearch, params, setParams]);
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -77,13 +101,8 @@ export const OrganizerTopbar: React.FC = () => {
             <Search className="w-4 h-4 stroke-[3]" />
           </div>
           <input
-            value={search}
-            onChange={(e) => {
-              const next = new URLSearchParams(params);
-              if (e.target.value) next.set('q', e.target.value);
-              else next.delete('q');
-              setParams(next, { replace: true });
-            }}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="SEARCH..."
             className="w-full px-2 md:px-4 py-1.5 md:py-2 font-label-bold text-xs md:text-sm bg-transparent focus:outline-none uppercase placeholder-on-surface-variant min-w-0"
           />
