@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Bell, LogOut, Search, CheckCheck } from 'lucide-react';
+import { Bell, LogOut, Search, CheckCheck, Zap } from 'lucide-react';
 import { useOrganizerContext } from '../../../context/OrganizerContext';
 import { UserAvatar } from '../../common/UserAvatar';
 import { organizerApi } from '../../../services/organizerApi';
@@ -65,10 +65,15 @@ export const OrganizerTopbar: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-surface border-b-4 border-on-background flex items-center justify-between px-6 gap-4 sticky top-0 z-10">
-      <div className="flex-1 max-w-md">
+    <header className="h-16 bg-surface border-b-4 border-on-background flex items-center justify-between px-4 md:px-6 gap-2 md:gap-4 sticky top-0 z-10">
+      <div className="flex items-center gap-1.5 md:hidden shrink-0">
+        <Zap className="w-5 h-5 text-tertiary-fixed fill-tertiary-fixed drop-shadow-[1.5px_1.5px_0_rgba(0,0,0,1)]" />
+        <span className="text-sm font-extrabold tracking-tight" style={{ textShadow: '1px 1px 0 #000' }}>FESTFLOW</span>
+      </div>
+
+      <div className="flex-grow md:flex-1 max-w-xs md:max-w-md min-w-0">
         <div className="flex items-center border-4 border-on-background bg-background neo-shadow-sm focus-within:neo-shadow transition-shadow">
-          <div className="pl-3 py-2 bg-background border-r-4 border-on-background">
+          <div className="pl-2 md:pl-3 py-1.5 md:py-2 bg-background border-r-4 border-on-background">
             <Search className="w-4 h-4 stroke-[3]" />
           </div>
           <input
@@ -79,8 +84,8 @@ export const OrganizerTopbar: React.FC = () => {
               else next.delete('q');
               setParams(next, { replace: true });
             }}
-            placeholder="SEARCH EVENTS..."
-            className="flex-1 px-4 py-2 font-label-bold text-sm bg-transparent focus:outline-none uppercase placeholder-on-surface-variant"
+            placeholder="SEARCH..."
+            className="w-full px-2 md:px-4 py-1.5 md:py-2 font-label-bold text-xs md:text-sm bg-transparent focus:outline-none uppercase placeholder-on-surface-variant min-w-0"
           />
         </div>
       </div>
