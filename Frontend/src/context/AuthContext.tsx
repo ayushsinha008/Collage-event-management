@@ -99,6 +99,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 photoURL: firebaseUser.photoURL || undefined,
               });
             }
+          } else {
+            setUser({
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || 'FestFlow User',
+              email: firebaseUser.email || '',
+              role: 'student',
+              photoURL: firebaseUser.photoURL || undefined,
+            });
           }
         }
       } else if (isStaffSession && savedUser) {
@@ -136,8 +144,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = await result.user.getIdToken();
       localStorage.setItem('auth_token', token);
 
-      const profile = await studentApi.getProfile();
-      const loggedInUser = buildUserFromProfile(profile, result.user.uid);
+      let loggedInUser: User;
+      try {
+        const profile = await studentApi.getProfile();
+        loggedInUser = buildUserFromProfile(profile, result.user.uid);
+      } catch (syncErr) {
+        console.warn('Failed to sync profile from backend during login:', syncErr);
+        loggedInUser = {
+          id: result.user.uid,
+          name: result.user.displayName || 'FestFlow User',
+          email: result.user.email || '',
+          role: 'student',
+          photoURL: result.user.photoURL || undefined,
+        };
+      }
       localStorage.setItem('auth_user', JSON.stringify(loggedInUser));
       setUser(loggedInUser);
       return loggedInUser;
