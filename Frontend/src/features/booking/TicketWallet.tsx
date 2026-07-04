@@ -85,7 +85,7 @@ export default function TicketWallet({
                   </div>
 
                   <div className="flex flex-col items-center border-t-2 border-on-background/10 pt-4 text-center">
-                    <div className="w-36 h-36 border-4 border-on-background p-2.5 bg-white mb-2 shadow-sm flex items-center justify-center">
+                    <div className="w-36 h-36 border-4 border-on-background p-2.5 bg-white dark:bg-slate-100 mb-2 shadow-sm flex items-center justify-center">
                       {qrCodeUrl ? (
                         <img src={qrCodeUrl} alt="Ticket QR Code" className="w-full h-full object-contain" />
                       ) : (
@@ -119,7 +119,7 @@ export default function TicketWallet({
           })}
         </div>
       ) : (
-        <div className="py-20 text-center border-4 border-dashed border-on-background bg-white p-8">
+        <div className="py-20 text-center border-4 border-dashed border-on-background bg-surface p-8">
           <span className="material-symbols-outlined text-5xl mb-4 text-[#ba1a1a]">confirmation_number</span>
           <h3 className="font-headline-md text-xl font-bold uppercase mb-2">Your Wallet is Empty</h3>
           <p className="text-on-surface-variant text-sm mb-6">

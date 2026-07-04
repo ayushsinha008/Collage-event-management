@@ -75,7 +75,7 @@ export default function StudentDashboard({
           <div>
             <div className="flex justify-between items-start mb-4">
               <span className="material-symbols-outlined text-3xl text-black">confirmation_number</span>
-              <span className="bg-white border-2 border-black px-2.5 py-0.5 text-[10px] font-label-bold text-black">ACTIVE PASSES</span>
+              <span className="bg-white/80 border-2 border-black px-2.5 py-0.5 text-[10px] font-label-bold text-black">ACTIVE PASSES</span>
             </div>
             <h4 className="font-headline-xl text-5xl font-bold mb-2 text-black">
               {myTickets.length}
@@ -86,7 +86,7 @@ export default function StudentDashboard({
           </div>
           <button 
             onClick={() => setCurrentTab('tickets')}
-            className="w-full mt-6 bg-white border-2 border-black py-2 text-xs font-label-bold uppercase text-black hover:bg-black hover:text-white transition-colors cursor-pointer"
+            className="w-full mt-6 bg-white/80 border-2 border-black py-2 text-xs font-label-bold uppercase text-black hover:bg-black hover:text-white transition-colors cursor-pointer"
           >
             VIEW WALLET
           </button>
