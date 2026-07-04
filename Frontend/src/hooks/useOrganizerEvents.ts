@@ -10,12 +10,34 @@ export interface EventFilters {
 }
 
 export const useOrganizerEvents = (initialFilters: EventFilters = {}) => {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const urlSearch = params.get('q') ?? '';
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<EventFilters>({ ...initialFilters, search: urlSearch });
+
+  // Sync URL search param to filters state
+  useEffect(() => {
+    setFilters((prev) => {
+      if (prev.search === urlSearch) return prev;
+      return { ...prev, search: urlSearch };
+    });
+  }, [urlSearch]);
+
+  // Sync filters state to URL search param
+  useEffect(() => {
+    const nextSearch = filters.search ?? '';
+    if (params.get('q') !== nextSearch) {
+      const next = new URLSearchParams(params);
+      if (nextSearch) {
+        next.set('q', nextSearch);
+      } else {
+        next.delete('q');
+      }
+      setParams(next, { replace: true });
+    }
+  }, [filters.search, params, setParams]);
 
   const fetch = useCallback(async () => {
     setLoading(true);

@@ -9,6 +9,7 @@ import { Ticket } from '../models/Ticket.model';
 import { Notification } from '../models/Notification.model';
 import { ApiError } from '../utils/ApiError';
 import { AuthUser } from '../types';
+import { uploadImage } from './cloudinary.service';
 
 const defaultEventSettings = (eventId: string) => ({
   eventId,
@@ -233,10 +234,14 @@ export class OrganizerService {
     return dbUser.organizerPreferences || defaultOrganizerSettings(dbUser);
   }
 
-  static async updateOrganizerProfile(user: AuthUser, data: { name?: string; email?: string; organization?: string }) {
+  static async updateOrganizerProfile(user: AuthUser, data: { name?: string; email?: string; organization?: string; avatarBase64?: string }) {
     const update: any = {};
     if (data.name) update.name = data.name;
     if (data.organization) update.college = data.organization;
+    if (data.avatarBase64) {
+      const url = await uploadImage(data.avatarBase64, 'avatars');
+      update.photoURL = url;
+    }
     const dbUser = await User.findByIdAndUpdate(user._id, update, { new: true });
     if (!dbUser) throw new ApiError(404, 'User not found');
     return {

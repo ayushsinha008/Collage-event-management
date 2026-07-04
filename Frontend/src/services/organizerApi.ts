@@ -184,12 +184,13 @@ export const organizerApi = {
         })),
       mockProfile
     ),
-  updateProfile: (data: Partial<Organizer>) =>
+  updateProfile: (data: Partial<Organizer> & { avatarBase64?: string }) =>
     withMockFallback<Organizer>(
       () =>
         API.patch<any>('/users/profile', {
           name: data.name,
           college: data.organization,
+          avatarBase64: data.avatarBase64,
         }).then((r) => ({
           id: r.data._id || r.data.id,
           name: r.data.name,

@@ -98,9 +98,6 @@ export default function Header({
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              if (_currentTab !== 'events' && e.target.value.trim() !== '') {
-                _setCurrentTab('events');
-              }
             }}
             placeholder="Search events, locations..."
             className="bg-transparent border-none outline-none flex-grow font-body-md focus:ring-0 focus:border-transparent text-on-surface p-0 text-xs sm:text-sm"
@@ -174,21 +171,20 @@ export default function Header({
                   <span className="material-symbols-outlined text-sm text-error">logout</span>
                   Sign Out
                 </button>
-
-                {/* Hidden file input */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="hidden"
-                />
               </div>
             )}
           </div>
 
         </div>
       </div>
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
     </header>
   );
 }

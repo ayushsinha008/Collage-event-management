@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useOrganizerContext } from '../../context/OrganizerContext';
 import { organizerApi } from '../../services/organizerApi';
 import { Save } from 'lucide-react';
+import { UserAvatar } from '../../components/common/UserAvatar';
 
 export const ProfilePage: React.FC = () => {
   const { organizer, refreshProfile } = useOrganizerContext();
@@ -12,6 +13,52 @@ export const ProfilePage: React.FC = () => {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const compressImage = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 256;
+        const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas not supported'));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(objectUrl);
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
+      };
+      img.onerror = reject;
+      img.src = objectUrl;
+    });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      setUploadError('File must be less than 8 MB');
+      return;
+    }
+    setUploadError('');
+    setIsUploading(true);
+    try {
+      const compressed = await compressImage(file);
+      await organizerApi.updateProfile({ ...form, avatarBase64: compressed });
+      await refreshProfile();
+    } catch (err: any) {
+      console.error('Organizer PFP compression/upload error:', err);
+      setUploadError('Upload failed — please try again.');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +82,46 @@ export const ProfilePage: React.FC = () => {
       </div>
 
       <form onSubmit={save} className="bg-surface border-4 border-on-background p-8 neo-shadow space-y-6">
+        {/* Avatar Upload Section */}
+        <div className="flex items-center gap-6 pb-6 border-b-2 border-on-background/10">
+          <div className="relative group shrink-0">
+            <UserAvatar
+              name={organizer?.name || 'Organizer'}
+              src={organizer?.avatarUrl}
+              size="md"
+              variant="organizer"
+            />
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center border-4 border-on-background">
+                <span className="material-symbols-outlined text-white animate-spin">hourglass_empty</span>
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <h4 className="text-sm font-extrabold uppercase tracking-widest">Profile Picture</h4>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="bg-[#ffe24c] hover:bg-yellow-400 text-on-background font-label-bold px-4 py-2 border-2 border-on-background text-xs uppercase neo-shadow-sm hover-lift cursor-pointer disabled:opacity-50"
+              >
+                {isUploading ? 'Uploading...' : 'Choose Photo'}
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+              />
+            </div>
+            {uploadError && (
+              <p className="text-xs text-error font-semibold uppercase">{uploadError}</p>
+            )}
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-extrabold uppercase tracking-widest mb-2">Full Name</label>
           <input

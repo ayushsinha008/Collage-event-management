@@ -2,11 +2,10 @@ export const applyTheme = (theme: 'light' | 'dark' | 'system') => {
   const root = window.document.documentElement;
   root.classList.remove('light', 'dark');
 
-  if (theme === 'system') {
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    root.classList.add(systemTheme);
+  if (theme === 'dark') {
+    root.classList.add('dark');
   } else {
-    root.classList.add(theme);
+    root.classList.add('light');
   }
   
   localStorage.setItem('festflow_theme', theme);
@@ -14,8 +13,8 @@ export const applyTheme = (theme: 'light' | 'dark' | 'system') => {
 
 export const initTheme = () => {
   const savedTheme = localStorage.getItem('festflow_theme') as 'light' | 'dark' | 'system' | null;
-  if (savedTheme) {
-    applyTheme(savedTheme);
+  if (savedTheme === 'dark') {
+    applyTheme('dark');
   } else {
     applyTheme('light');
   }
