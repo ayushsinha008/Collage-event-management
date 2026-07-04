@@ -5,10 +5,11 @@ import { Registration } from '../models/Registration.model';
 import { Ticket } from '../models/Ticket.model';
 import { env } from '../config/env.config';
 import { logger } from './logger';
-
-const SEED_EVENT_TITLE = /^Tech Fest Event \d+$/i;
-const SEED_EVENT_DESCRIPTION = /^Description for awesome event \d+$/i;
-const SEED_USER_EMAIL = /@festflow\.com$/i;
+import {
+  SEED_EVENT_TITLE,
+  SEED_EVENT_DESCRIPTION,
+  SEED_USER_EMAIL,
+} from '../constants/seed.constants';
 
 export type SeedCleanupResult = {
   deletedEvents: number;

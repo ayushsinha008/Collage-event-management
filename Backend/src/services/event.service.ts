@@ -5,6 +5,7 @@ import { ApiError } from '../utils/ApiError';
 import { APIFeatures } from '../utils/apiFeatures';
 import { AuthUser, Role, RegistrationStatus, TicketStatus } from '../types';
 import { uploadImage } from './cloudinary.service';
+import { excludeSeedEventsFilter } from '../constants/seed.constants';
 
 const isBase64Image = (value: string) =>
   value.startsWith('data:image/') || (!value.startsWith('http') && value.length > 100);
@@ -23,7 +24,11 @@ const resolveBannerImage = async (bannerImage?: string): Promise<string | undefi
 export class EventService {
   static async getEvents(queryString: any): Promise<{ events: IEvent[]; total: number }> {
     // Only return non-deleted events and exclude Drafts
-    let filter: Record<string, unknown> = { isDeleted: false, status: { $ne: 'Draft' } };
+    let filter: Record<string, unknown> = {
+      isDeleted: false,
+      status: { $ne: 'Draft' },
+      ...excludeSeedEventsFilter,
+    };
     const features = new APIFeatures(Event.find(filter).populate('organizer', 'name email'), queryString)
       .filter()
       .search(['title', 'description', 'category', 'venue', 'tags'])
