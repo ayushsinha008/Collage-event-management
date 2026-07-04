@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "dev": "nodemon --watch src --ext ts --exec tsx src/server.ts",
     "seed": "tsx src/utils/seed.ts",
+    "cleanup-seed": "tsx src/utils/cleanupSeedData.ts",
     "test": "jest --detectOpenHandles --forceExit --verbose"
   },
   "keywords": [],

@@ -150,5 +150,11 @@ export const seedData = async (shouldConnect = true, shouldExit = true) => {
 };
 
 if (require.main === module) {
+  if (env.NODE_ENV === 'production' && process.env.ALLOW_SEED !== 'true') {
+    logger.error(
+      'Refusing to seed production database. Set ALLOW_SEED=true only if you really mean it.'
+    );
+    process.exit(1);
+  }
   seedData(true, true);
 }
