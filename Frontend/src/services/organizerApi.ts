@@ -246,20 +246,31 @@ export const organizerApi = {
     );
   },
   createEvent: (data: any) => {
-    const payload: any = { ...data };
-    if (data.imageUrl) payload.bannerImage = data.imageUrl;
-    if (data.location) payload.venue = data.location;
-    if (data.time) {
-      payload.startTime = data.time;
-      payload.endTime = data.endTime || data.time;
-    }
-    if (data.date && !String(data.date).includes('T')) {
-      payload.date = new Date(data.date).toISOString();
-    }
-    if (!payload.status) payload.status = 'Draft';
+    // Build a clean payload using the correct backend field names.
+    // Remove frontend-only fields (imageUrl, location, time) — the caller
+    // should already send venue / startTime / bannerImage directly.
+    const payload: any = {
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      venue: data.venue || data.location,
+      date: data.date && !String(data.date).includes('T')
+        ? new Date(data.date).toISOString()
+        : data.date,
+      startTime: data.startTime || data.time,
+      endTime: data.endTime || '23:59',
+      capacity: Number(data.capacity) || 100,
+      status: data.status || 'Draft',
+    };
+    // Only include bannerImage if provided
+    if (data.bannerImage) payload.bannerImage = data.bannerImage;
+    // Fallback: if imageUrl was passed instead of bannerImage
+    if (!payload.bannerImage && data.imageUrl) payload.bannerImage = data.imageUrl;
+    if (data.tags) payload.tags = data.tags;
+
     return withMockFallback(
       () => API.post<any>('/events', payload).then((r) => mapEventResponse(r.data)),
-      { ...data, id: 'evt-' + Date.now(), status: 'draft', registrations: 0, capacity: data.capacity || 100 } as Event
+      { ...payload, id: 'evt-' + Date.now(), registrations: 0 } as Event
     );
   },
   getEvent: (id: string) =>
