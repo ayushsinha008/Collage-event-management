@@ -46,12 +46,12 @@ export default function Header({
   };
 
   return (
-    <header className="flex justify-between items-center px-6 md:px-margin-desktop py-4 w-full bg-[#a6f2cf] border-b-4 border-on-background sticky top-0 z-40">
+    <header className="flex justify-between items-center px-6 md:px-margin-desktop py-4 w-full bg-[#a6f2cf] dark:bg-surface-container border-b-4 border-on-background sticky top-0 z-40">
       <div className="flex items-center gap-4">
         <h2 className="font-headline-md text-headline-md font-bold text-on-background md:hidden flex items-center gap-1">
           <span className="material-symbols-outlined text-primary">electric_bolt</span> FestFlow
         </h2>
-        <div className="hidden md:flex bg-white border-4 border-on-background px-4 py-2 w-96 items-center gap-3 neo-shadow-sm">
+        <div className="hidden md:flex bg-white dark:bg-surface border-4 border-on-background px-4 py-2 w-96 items-center gap-3 neo-shadow-sm">
           <span className="material-symbols-outlined text-on-surface-variant">search</span>
           <input
             type="text"
@@ -72,7 +72,7 @@ export default function Header({
 
           {/* Neo-Brutalist User Dropdown */}
           <div className="relative group">
-            <button className="flex items-center gap-2 p-1 border-4 border-on-background bg-[#e5deff] neo-shadow-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all">
+            <button className="flex items-center gap-2 p-1 border-4 border-on-background bg-[#e5deff] dark:bg-surface-container-high neo-shadow-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all">
               <div className="w-8 h-8 border-2 border-on-background bg-secondary-container overflow-hidden">
                 <img
                   className="w-full h-full object-cover"
@@ -86,18 +86,18 @@ export default function Header({
             </button>
 
             {/* Popover Menu */}
-            <div className="absolute right-0 mt-2 w-48 bg-white border-4 border-on-background neo-shadow hidden group-hover:block hover:block z-50 p-2">
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-surface-container border-4 border-on-background neo-shadow hidden group-hover:block hover:block z-50 p-2">
               <div className="border-b-2 border-on-background pb-2 mb-2 px-2 text-left">
-                <p className="font-label-bold text-[9px] text-[#1b6b4f] uppercase tracking-widest font-black">{user?.role || 'student'}</p>
+                <p className="font-label-bold text-[9px] text-[#1b6b4f] dark:text-[#a6f2cf] uppercase tracking-widest font-black">{user?.role || 'student'}</p>
                 <p className="font-bold text-xs text-on-background truncate">{user?.name || 'FestFlow User'}</p>
-                <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user?.email}</p>
               </div>
 
               {/* Change PFP Action */}
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className={`w-full text-left px-2 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer ${isUploading ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'hover:bg-[#a6f2cf]'}`}
+                className={`w-full text-left px-2 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer ${isUploading ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'hover:bg-[#a6f2cf] dark:hover:bg-slate-800'}`}
               >
                 {isUploading ? (
                   <>
@@ -114,7 +114,7 @@ export default function Header({
 
               <button
                 onClick={logout}
-                className="w-full text-left px-2 py-1.5 hover:bg-[#ffe5ec] hover:text-error text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer mt-1"
+                className="w-full text-left px-2 py-1.5 hover:bg-[#ffe5ec] dark:hover:bg-[#3d2c31] hover:text-error dark:hover:text-red-400 text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors duration-150 cursor-pointer mt-1"
               >
                 <span className="material-symbols-outlined text-sm text-error">logout</span>
                 Sign Out

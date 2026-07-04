@@ -81,7 +81,7 @@ export default function EventDashboard({
               className={`border-2 border-on-background px-4 py-2 font-label-bold text-xs uppercase transition-all ${
                 selectedCategory === filter.key
                   ? 'bg-[#a6f2cf] text-on-background neo-shadow-sm font-bold'
-                  : 'bg-white text-on-background hover:bg-[#e5deff]'
+                  : 'bg-surface text-on-background hover:bg-[#e5deff]'
               }`}
             >
               {filter.label}
@@ -92,7 +92,7 @@ export default function EventDashboard({
 
       {/* Bento Grid */}
       {filteredEvents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        <div className="grid-cols-1 md:grid-cols-12 gap-8 grid">
           {filteredEvents.map((event, index) => {
             const hasJoined = myTickets.includes(event.id);
             
@@ -104,7 +104,7 @@ export default function EventDashboard({
                   onClick={() => setSelectedEvent(event)}
                   className="md:col-span-8 group cursor-pointer"
                 >
-                  <div className="bg-white border-4 border-on-background neo-shadow hover-lift transition-all overflow-hidden flex flex-col md:flex-row h-full">
+                  <div className="bg-surface border-4 border-on-background neo-shadow hover-lift transition-all overflow-hidden flex flex-col md:flex-row h-full">
                     <div className="md:w-1/2 relative overflow-hidden h-64 md:h-auto bg-slate-900">
                       <img 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
@@ -179,7 +179,7 @@ export default function EventDashboard({
                           {event.description}
                         </p>
                       </div>
-                      <div className="bg-white/50 border-2 border-on-background p-3 flex items-center gap-4">
+                      <div className="bg-white/50 dark:bg-black/50 border-2 border-on-background p-3 flex items-center gap-4">
                         <span className="material-symbols-outlined">calendar_today</span>
                         <div>
                           <p className="font-label-bold text-xs uppercase">Date & Venue</p>
@@ -199,7 +199,7 @@ export default function EventDashboard({
                 onClick={() => setSelectedEvent(event)}
                 className="md:col-span-4 group cursor-pointer"
               >
-                <div className="bg-white border-4 border-on-background neo-shadow hover-lift h-full flex flex-col">
+                <div className="bg-surface border-4 border-on-background neo-shadow hover-lift h-full flex flex-col">
                   <div className="h-48 overflow-hidden border-b-4 border-on-background bg-slate-900 shrink-0">
                     <img 
                       className="w-full h-full object-cover group-hover:scale-105 transition-all" 
@@ -231,7 +231,7 @@ export default function EventDashboard({
                         className={`w-full py-2 border-2 border-on-background font-label-bold uppercase text-xs hover-lift press-down ${
                           hasJoined
                             ? 'bg-[#ba1a1a] text-white border-[#ba1a1a]'
-                            : 'bg-white hover:bg-on-background hover:text-white'
+                            : 'bg-surface hover:bg-on-background dark:hover:bg-white dark:hover:text-black hover:text-white'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {registeringEventId === event.id 
@@ -247,7 +247,7 @@ export default function EventDashboard({
           })}
         </div>
       ) : (
-        <div className="py-20 text-center border-4 border-dashed border-on-background bg-white p-8">
+        <div className="py-20 text-center border-4 border-dashed border-on-background bg-surface p-8">
           <span className="material-symbols-outlined text-5xl mb-4 text-slate-400">search_off</span>
           <h3 className="font-headline-md text-xl font-bold uppercase mb-2">No Events Found</h3>
           <p className="text-on-surface-variant text-sm">
