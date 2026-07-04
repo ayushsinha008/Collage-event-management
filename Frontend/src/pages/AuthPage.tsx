@@ -17,7 +17,7 @@ export const AuthPage: React.FC = () => {
   const [googleUserToUpgrade, setGoogleUserToUpgrade] = useState<any | null>(null);
   const [upgradePasscode, setUpgradePasscode] = useState('');
 
-  const from = (location.state as any)?.from?.pathname || '/';
+  const from = (location.state as any)?.from?.pathname || '/dashboard';
 
   useEffect(() => {
     if (user) {

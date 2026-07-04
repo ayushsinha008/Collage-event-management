@@ -1,5 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   Zap,
   ArrowRight,
@@ -125,6 +126,21 @@ const ROLES = [
 ];
 
 export const LandingPage: React.FC = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === 'organizer') {
+        navigate('/organizer/dashboard');
+      } else if (user.role === 'volunteer') {
+        navigate('/volunteer');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, loading, navigate]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Marquee keyframes, scoped locally */}
