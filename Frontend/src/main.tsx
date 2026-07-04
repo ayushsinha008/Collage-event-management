@@ -9,6 +9,7 @@ import { initTheme, initDensity } from './utils/theme.ts';
 initTheme();
 initDensity();
 
+const LandingPage = lazy(() => import('./pages/LandingPage.tsx'));
 const StudentApp = lazy(() => import('./App.tsx'));
 const OrganizerApp = lazy(() => import('./OrganizerApp.tsx'));
 const VolunteerApp = lazy(() => import('./VolunteerApp.tsx'));
@@ -100,6 +101,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <BrowserRouter>
           <Suspense fallback={<AppLoader />}>
             <Routes>
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<AuthPage />} />
               <Route
                 path="/organizer/*"
