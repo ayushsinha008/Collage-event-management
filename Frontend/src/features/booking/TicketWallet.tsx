@@ -126,7 +126,7 @@ export default function TicketWallet({
             You have not registered for any events yet. Secure a free spot on the dashboard.
           </p>
           <button 
-            onClick={() => setCurrentTab('dashboard')}
+            onClick={() => setCurrentTab('events')}
             className="bg-primary text-white border-4 border-on-background neo-shadow-sm px-6 py-2.5 font-label-bold uppercase text-xs hover-lift press-down"
           >
             Browse Events

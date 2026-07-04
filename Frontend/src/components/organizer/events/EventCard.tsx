@@ -51,7 +51,7 @@ export const EventCard: React.FC<Props> = ({ event, onEdit, onDelete, onView, on
         <img
           src={safeImage()}
           alt={event.title}
-          className="w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-300"
+          className="w-full h-full object-cover opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-300"
         />
         <div className="absolute inset-0 bg-on-background/10 group-hover:bg-transparent transition-colors pointer-events-none" />
         <div className="absolute top-2 right-2">

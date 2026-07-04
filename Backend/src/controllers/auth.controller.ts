@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import '../config/firebase.config';
 import { User } from '../models/User.model';
+import { Notification } from '../models/Notification.model';
 import { AuthRequest, Role } from '../types';
 import { ApiError } from '../utils/ApiError';
 import { sendSuccess } from '../utils/response';
@@ -58,6 +59,19 @@ export class AuthController {
 
     const customToken = `festflow-staff-${role}`;
 
+    if (user) {
+      try {
+        await Notification.create({
+          user: user._id,
+          title: 'Staff Login Session Started',
+          message: `Logged in successfully as ${role === 'organizer' ? 'Organizer' : 'Volunteer'}.`,
+          type: 'LOGIN'
+        });
+      } catch (err) {
+        console.error('Failed to create login notification:', err);
+      }
+    }
+
     sendSuccess(req as AuthRequest, res, 200, 'Staff login successful', {
       customToken,
       user,
@@ -77,6 +91,17 @@ export class AuthController {
 
     if (!user) {
       throw new ApiError(404, 'User not found.');
+    }
+
+    try {
+      await Notification.create({
+        user: user._id,
+        title: 'Role Verification Approved',
+        message: `Successfully verified and upgraded account to ${role === 'organizer' ? 'Organizer' : 'Volunteer'}.`,
+        type: 'INFO'
+      });
+    } catch (err) {
+      console.error('Failed to create role verification notification:', err);
     }
 
     sendSuccess(req, res, 200, 'Role verified successfully', user);

@@ -11,6 +11,20 @@ export class EventController {
 
   static async getEvent(req: Request, res: Response) {
     const event = await EventService.getEventById(req.params.id as string);
+
+    // Create a view notification for the organizer
+    try {
+      const { Notification } = require('../models/Notification.model');
+      await Notification.create({
+        user: event.organizer._id || event.organizer,
+        title: 'Event Viewed',
+        message: `Your event "${event.title}" was viewed by a student.`,
+        type: 'INFO'
+      });
+    } catch (err) {
+      console.error('Failed to create view notification:', err);
+    }
+
     sendSuccess(req as any, res, 200, 'Event fetched successfully', event);
   }
 
