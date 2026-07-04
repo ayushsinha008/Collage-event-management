@@ -84,6 +84,16 @@ app.use(compression());
 // Request ID Injection
 app.use(requestIdMiddleware);
 
+// Root — friendly response (Vercel opens this URL in browser)
+app.get('/', (req, res) => {
+  sendSuccess(req as any, res, 200, 'FestFlow API is running', {
+    status: 'OK',
+    health: '/health',
+    api: '/api/v1',
+    docs: '/api-docs',
+  });
+});
+
 // Root Health Check (Required by some cloud providers at /)
 app.get('/health', (req, res) => {
   sendSuccess(req as any, res, 200, 'Root Health check passed', {
