@@ -64,26 +64,26 @@ export const AnalyticsPage: React.FC = () => {
 
       <MetricSummary
         metrics={[
-          { label: 'Total Events', value: data.totalEvents },
-          { label: 'Registrations', value: data.totalRegistrations },
-          { label: 'Attendees', value: data.totalAttendees },
-          { label: 'Attendance Rate', value: `${data.attendanceRate}%` },
+          { label: 'Total Events', value: data?.totalEvents || 0 },
+          { label: 'Registrations', value: data?.totalRegistrations || 0 },
+          { label: 'Attendees', value: data?.totalAttendees || 0 },
+          { label: 'Attendance Rate', value: `${data?.attendanceRate || 0}%` },
         ]}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <LineChartCard title="Registrations Over Time" data={data.registrationsOverTime} />
+        <LineChartCard title="Registrations Over Time" data={data?.registrationsOverTime || []} />
         <PieChartCard
           title="Events by Category"
-          data={data.eventsByCategory.map((c) => ({ name: c.category, value: c.count }))}
+          data={Array.isArray(data?.eventsByCategory) ? data.eventsByCategory.map((c) => ({ name: c.category, value: c.count })) : []}
         />
         <BarChartCard
           title="Top Events"
-          data={data.topEvents.map((e) => ({ label: e.title.slice(0, 12), value: e.registrations }))}
+          data={Array.isArray(data?.topEvents) ? data.topEvents.map((e) => ({ label: e?.title?.slice(0, 12) || '', value: e?.registrations || 0 })) : []}
         />
         <LineChartCard
           title="Revenue Trend"
-          data={data.registrationsOverTime.map((d) => ({ date: d.date, count: d.count * 50 }))}
+          data={Array.isArray(data?.registrationsOverTime) ? data.registrationsOverTime.map((d) => ({ date: d.date, count: d.count * 50 })) : []}
           color="#1b6b4f"
         />
       </div>
