@@ -17,7 +17,7 @@ export const initTheme = () => {
   if (savedTheme) {
     applyTheme(savedTheme);
   } else {
-    applyTheme('system');
+    applyTheme('light');
   }
 };
 
