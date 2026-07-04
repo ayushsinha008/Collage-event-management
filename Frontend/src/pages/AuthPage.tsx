@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Zap, GraduationCap, HeartHandshake, Lock, ArrowRight } from 'lucide-react';
 
 export const AuthPage: React.FC = () => {
-  const { login, signInWithGoogle } = useAuth();
+  const { user, login, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -15,6 +15,18 @@ export const AuthPage: React.FC = () => {
   const [success, setSuccess] = useState('');
 
   const from = (location.state as any)?.from?.pathname || '/';
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'organizer') {
+        navigate('/organizer/dashboard');
+      } else if (user.role === 'volunteer') {
+        navigate('/volunteer');
+      } else {
+        navigate(from);
+      }
+    }
+  }, [user, navigate, from]);
 
   const handleGoogleLogin = async () => {
     setError('');
@@ -92,10 +104,10 @@ export const AuthPage: React.FC = () => {
               className={`py-3 px-1 md:px-3 text-xs font-black uppercase tracking-wider border-2 flex flex-col md:flex-row items-center justify-center gap-1.5 transition-all ${
                 role === r
                   ? r === 'student'
-                    ? 'bg-[#ffe24c] border-on-background text-on-background shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-0.5 -translate-y-0.5'
+                    ? 'bg-[#ffe24c] border-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-0.5 -translate-y-0.5'
                     : r === 'organizer'
-                    ? 'bg-[#a6f2cf] border-on-background text-on-background shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-0.5 -translate-y-0.5'
-                    : 'bg-[#ffe5ec] border-on-background text-on-background shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-0.5 -translate-y-0.5'
+                    ? 'bg-[#a6f2cf] border-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-0.5 -translate-y-0.5'
+                    : 'bg-[#ffe5ec] border-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-0.5 -translate-y-0.5'
                   : 'bg-surface border-transparent text-on-surface-variant hover:bg-surface-variant'
               }`}
             >
@@ -124,7 +136,7 @@ export const AuthPage: React.FC = () => {
             type="button"
             disabled={loading}
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center font-black text-base py-4 border-4 border-on-background bg-white text-on-background neo-shadow hover-lift press-down uppercase transition-all disabled:opacity-50 mt-4 gap-3 cursor-pointer"
+            className="w-full flex items-center justify-center font-black text-base py-4 border-4 border-black bg-white text-black neo-shadow hover-lift press-down uppercase transition-all disabled:opacity-50 mt-4 gap-3 cursor-pointer"
           >
             {loading ? (
               <span>VERIFYING GOOGLE ACCOUNT...</span>
